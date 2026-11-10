@@ -325,9 +325,9 @@
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="txModalTitle" class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
-                <button onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button type="button" onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="handleTransactionSubmit(event)" class="space-y-4 text-xs font-medium">
+            <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4 text-xs font-medium">
                 <input type="hidden" id="editTxId">
                 <div>
                     <label class="block mb-1 text-slate-600">סוג תנועה</label>
@@ -363,9 +363,9 @@
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-slate-900">הוספת כרטיס אשראי</h3>
-                <button onclick="closeModal('creditCardModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button type="button" onclick="closeModal('creditCardModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="addCreditCard(event)" class="space-y-4 text-xs font-medium">
+            <form id="creditCardForm" onsubmit="addCreditCard(event)" class="space-y-4 text-xs font-medium">
                 <div>
                     <label class="block mb-1 text-slate-600">שם מחזיק הכרטיס</label>
                     <input type="text" id="ccHolder" required placeholder="למשל: ישראל ישראלי" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
@@ -397,9 +397,9 @@
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="instModalTitle" class="text-base font-bold text-slate-900">הוספת תשלום מתמשך / קבוע</h3>
-                <button onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button type="button" onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="handleInstallmentSubmit(event)" class="space-y-4 text-xs font-medium">
+            <form id="installmentForm" onsubmit="handleInstallmentSubmit(event)" class="space-y-4 text-xs font-medium">
                 <input type="hidden" id="editInstId">
                 <div>
                     <label class="block mb-1 text-slate-600">תיאור התשלום</label>
@@ -596,15 +596,14 @@
             if (modalId === 'transactionModal') {
                 document.getElementById('editTxId').value = '';
                 document.getElementById('txModalTitle').textContent = 'הוספת תנועה חדשה';
-                document.getElementById('txTitle').value = '';
-                document.getElementById('txAmount').value = '';
+                document.getElementById('transactionForm').reset();
                 populateCategoryDropdown();
+            } else if (modalId === 'creditCardModal') {
+                document.getElementById('creditCardForm').reset();
             } else if (modalId === 'installmentModal') {
                 document.getElementById('editInstId').value = '';
                 document.getElementById('instModalTitle').textContent = 'הוספת תשלום מתמשך / קבוע';
-                document.getElementById('instTitle').value = '';
-                document.getElementById('instAmount').value = '';
-                document.getElementById('instMonths').value = '';
+                document.getElementById('installmentForm').reset();
                 populateInstallmentCardSelect();
             }
             document.getElementById(modalId).classList.remove('hidden');
@@ -721,10 +720,6 @@
             window.initializedMonths[key] = true;
             await saveAll();
             closeModal('creditCardModal');
-            document.getElementById('ccHolder').value = '';
-            document.getElementById('ccDigits').value = '';
-            document.getElementById('ccCompany').value = '';
-            document.getElementById('ccAmount').value = '';
             refreshApp();
         }
 
