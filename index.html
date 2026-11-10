@@ -324,10 +324,11 @@
     <div id="transactionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
+                <h3 id="txModalTitle" class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
                 <button onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="addTransaction(event)" class="space-y-4 text-xs font-medium">
+            <form onsubmit="handleTransactionSubmit(event)" class="space-y-4 text-xs font-medium">
+                <input type="hidden" id="editTxId">
                 <div>
                     <label class="block mb-1 text-slate-600">סוג תנועה</label>
                     <select id="txType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
@@ -395,10 +396,11 @@
     <div id="installmentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך / קבוע</h3>
+                <h3 id="instModalTitle" class="text-base font-bold text-slate-900">הוספת תשלום מתמשך / קבוע</h3>
                 <button onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="addInstallment(event)" class="space-y-4 text-xs font-medium">
+            <form onsubmit="handleInstallmentSubmit(event)" class="space-y-4 text-xs font-medium">
+                <input type="hidden" id="editInstId">
                 <div>
                     <label class="block mb-1 text-slate-600">תיאור התשלום</label>
                     <input type="text" id="instTitle" required placeholder="למשל: רב-קו / אינטרנט" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
@@ -591,12 +593,21 @@
         }
 
         function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
             if (modalId === 'transactionModal') {
+                document.getElementById('editTxId').value = '';
+                document.getElementById('txModalTitle').textContent = 'הוספת תנועה חדשה';
+                document.getElementById('txTitle').value = '';
+                document.getElementById('txAmount').value = '';
                 populateCategoryDropdown();
             } else if (modalId === 'installmentModal') {
+                document.getElementById('editInstId').value = '';
+                document.getElementById('instModalTitle').textContent = 'הוספת תשלום מתמשך / קבוע';
+                document.getElementById('instTitle').value = '';
+                document.getElementById('instAmount').value = '';
+                document.getElementById('instMonths').value = '';
                 populateInstallmentCardSelect();
             }
+            document.getElementById(modalId).classList.remove('hidden');
         }
 
         function closeModal(modalId) {
@@ -621,7 +632,7 @@
 
         document.getElementById('txType')?.addEventListener('change', populateCategoryDropdown);
 
-        function populateInstallmentCardSelect() {
+        function populateInstallmentCardSelect(selectedCardId = '') {
             const select = document.getElementById('instCardId');
             select.innerHTML = '';
             const key = `${selYear}-${selMonth}`;
@@ -630,34 +641,57 @@
                 select.innerHTML = `<option value="">אין כרטיסים בחודש זה (הוסף קודם)</option>`;
             } else {
                 cards.forEach(c => {
-                    select.innerHTML += `<option value="${c.id}">${c.company} (...${c.digits}) - ${c.holder}</option>`;
+                    const isSel = c.id === selectedCardId ? 'selected' : '';
+                    select.innerHTML += `<option value="${c.id}" ${isSel}>${c.company} (...${c.digits}) - ${c.holder}</option>`;
                 });
             }
         }
 
-        async function addTransaction(e) {
+        async function handleTransactionSubmit(e) {
             e.preventDefault();
+            const editId = document.getElementById('editTxId').value;
             const type = document.getElementById('txType').value;
             const title = document.getElementById('txTitle').value;
             const amount = parseFloat(document.getElementById('txAmount').value);
             const category = document.getElementById('txCategory').value;
 
-            const newTx = {
-                id: 'tx_' + Date.now(),
-                year: selYear,
-                month: selMonth,
-                type,
-                title,
-                amount,
-                category
-            };
+            if (editId) {
+                const tx = window.transactions.find(t => t.id === editId);
+                if (tx) {
+                    tx.type = type;
+                    tx.title = title;
+                    tx.amount = amount;
+                    tx.category = category;
+                }
+            } else {
+                const newTx = {
+                    id: 'tx_' + Date.now(),
+                    year: selYear,
+                    month: selMonth,
+                    type,
+                    title,
+                    amount,
+                    category
+                };
+                window.transactions.push(newTx);
+            }
 
-            window.transactions.push(newTx);
             await saveAll();
-            closeModal('transactionModal'); // סגירה אוטומטית מידית
-            document.getElementById('txTitle').value = '';
-            document.getElementById('txAmount').value = '';
+            closeModal('transactionModal');
             refreshApp();
+        }
+
+        function editTransaction(id) {
+            const tx = window.transactions.find(t => t.id === id);
+            if (!tx) return;
+            document.getElementById('editTxId').value = tx.id;
+            document.getElementById('txModalTitle').textContent = 'עריכת תנועה';
+            document.getElementById('txType').value = tx.type;
+            populateCategoryDropdown();
+            document.getElementById('txTitle').value = tx.title;
+            document.getElementById('txAmount').value = tx.amount;
+            document.getElementById('txCategory').value = tx.category;
+            document.getElementById('transactionModal').classList.remove('hidden');
         }
 
         async function deleteTransaction(id) {
@@ -686,7 +720,7 @@
             window.creditCards.push(newCard);
             window.initializedMonths[key] = true;
             await saveAll();
-            closeModal('creditCardModal'); // סגירה אוטומטית מידית
+            closeModal('creditCardModal');
             document.getElementById('ccHolder').value = '';
             document.getElementById('ccDigits').value = '';
             document.getElementById('ccCompany').value = '';
@@ -711,8 +745,9 @@
             }
         }
 
-        async function addInstallment(e) {
+        async function handleInstallmentSubmit(e) {
             e.preventDefault();
+            const editId = document.getElementById('editInstId').value;
             const title = document.getElementById('instTitle').value;
             const amount = parseFloat(document.getElementById('instAmount').value);
             const monthsInput = document.getElementById('instMonths').value.trim();
@@ -721,23 +756,46 @@
             const startMonth = parseInt(document.getElementById('instStartMonth').value);
             const startYear = parseInt(document.getElementById('instStartYear').value);
 
-            const newInst = {
-                id: 'inst_' + Date.now(),
-                title,
-                amount,
-                monthsCount,
-                cardId,
-                startMonth,
-                startYear
-            };
+            if (editId) {
+                const inst = window.installments.find(i => i.id === editId);
+                if (inst) {
+                    inst.title = title;
+                    inst.amount = amount;
+                    inst.monthsCount = monthsCount;
+                    inst.cardId = cardId;
+                    inst.startMonth = startMonth;
+                    inst.startYear = startYear;
+                }
+            } else {
+                const newInst = {
+                    id: 'inst_' + Date.now(),
+                    title,
+                    amount,
+                    monthsCount,
+                    cardId,
+                    startMonth,
+                    startYear
+                };
+                window.installments.push(newInst);
+            }
 
-            window.installments.push(newInst);
             await saveAll();
-            closeModal('installmentModal'); // סגירה אוטומטית מידית
-            document.getElementById('instTitle').value = '';
-            document.getElementById('instAmount').value = '';
-            document.getElementById('instMonths').value = '';
+            closeModal('installmentModal');
             refreshApp();
+        }
+
+        function editInstallment(id) {
+            const inst = window.installments.find(i => i.id === id);
+            if (!inst) return;
+            document.getElementById('editInstId').value = inst.id;
+            document.getElementById('instModalTitle').textContent = 'עריכת תשלום מתמשך / קבוע';
+            document.getElementById('instTitle').value = inst.title;
+            document.getElementById('instAmount').value = inst.amount;
+            document.getElementById('instMonths').value = inst.monthsCount !== null ? inst.monthsCount : '';
+            populateInstallmentCardSelect(inst.cardId);
+            document.getElementById('instStartMonth').value = inst.startMonth;
+            document.getElementById('instStartYear').value = inst.startYear;
+            document.getElementById('installmentModal').classList.remove('hidden');
         }
 
         async function deleteInstallment(id) {
@@ -754,7 +812,7 @@
                 let diff = currentAbsolute - startAbsolute;
                 
                 if (inst.monthsCount === null || inst.monthsCount === undefined) {
-                    if (diff >= 0) total += inst.amount; // תשלום מתמשך ללא סוף
+                    if (diff >= 0) total += inst.amount;
                 } else {
                     if (diff >= 0 && diff < inst.monthsCount) total += inst.amount;
                 }
@@ -1063,7 +1121,10 @@
                             <div>
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="font-bold text-slate-800">${inst.title}</span>
-                                    <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    <div class="flex items-center gap-1.5">
+                                        <button onclick="editInstallment('${inst.id}')" class="text-slate-400 hover:text-indigo-600" title="ערוך תשלום"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600" title="מחק תשלום"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </div>
                                 </div>
                                 <div class="text-[11px] text-slate-400 mb-2">סטטוס: ${isActive ? '<span class="text-emerald-600 font-bold">פעיל החודש</span>' : 'לא פעיל בחודש זה'}</div>
                                 <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold text-xs">
@@ -1103,8 +1164,9 @@
                         <td class="p-3 font-bold text-slate-800">${t.title}</td>
                         <td class="p-3 text-slate-500">${t.category}</td>
                         <td class="p-3 font-black text-emerald-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 text-center flex items-center justify-center gap-1.5">
+                            <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600" title="ערוך"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600" title="מחק"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1132,8 +1194,9 @@
                         <td class="p-3 font-bold text-slate-800">${t.title}</td>
                         <td class="p-3 text-slate-500">${t.category}</td>
                         <td class="p-3 font-black text-rose-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 text-center flex items-center justify-center gap-1.5">
+                            <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600" title="ערוך"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600" title="מחק"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
