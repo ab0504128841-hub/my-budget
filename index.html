@@ -554,7 +554,8 @@
             monthsList.forEach((m, idx) => {
                 const btn = document.createElement('button');
                 btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
-                btn.textContent = m.name;
+                // תוקן: הצגת מספר החודש לצד השם (למשל: 01 - ינואר)
+                btn.textContent = `${m.code} - ${m.name}`;
                 btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
                 mContainer.appendChild(btn);
             });
@@ -566,7 +567,7 @@
             if (mSelect && ySelect) {
                 mSelect.innerHTML = '';
                 monthsList.forEach((m, i) => {
-                    mSelect.innerHTML += `<option value="${i}">${m.name}</option>`;
+                    mSelect.innerHTML += `<option value="${i}">${m.code} - ${m.name}</option>`;
                 });
                 ySelect.innerHTML = '';
                 for (let y = currentYear - 1; y <= currentYear + 3; y++) {
@@ -639,7 +640,10 @@
 
             window.transactions.push(newTx);
             await saveAll();
+            
+            // תוקן: סגירה אוטומטית של המודל מיד לאחר השמירה
             closeModal('transactionModal');
+            
             document.getElementById('txTitle').value = '';
             document.getElementById('txAmount').value = '';
             refreshApp();
@@ -670,7 +674,10 @@
 
             window.creditCards.push(newCard);
             await saveAll();
+            
+            // תוקן: סגירה אוטומטית של המודל מיד לאחר השמירה
             closeModal('creditCardModal');
+            
             document.getElementById('ccHolder').value = '';
             document.getElementById('ccDigits').value = '';
             document.getElementById('ccCompany').value = '';
@@ -705,7 +712,10 @@
 
             window.installments.push(newInst);
             await saveAll();
+            
+            // תוקן: סגירה אוטומטית של המודל מיד לאחר השמירה
             closeModal('installmentModal');
+            
             document.getElementById('instTitle').value = '';
             document.getElementById('instAmount').value = '';
             document.getElementById('instMonths').value = '';
@@ -857,8 +867,6 @@
             const totalInstallments = getActiveInstallmentsForCurrentMonth();
 
             const netCc = Math.max(0, totalCcBank - totalInstallments);
-            
-            // תוקן: סך ההוצאות מורכב אך ורק מההוצאות שבטבלה (לא מתווסף אוטומטית מחיובי האשראי הגולמיים)
             const totalExpense = totalManualExp;
             const netBalance = totalIncome - totalExpense;
 
