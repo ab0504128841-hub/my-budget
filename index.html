@@ -238,7 +238,7 @@
                     <div class="bg-amber-50 text-amber-600 p-2 rounded-xl">
                         <i data-lucide="repeat" class="w-5 h-5"></i>
                     </div>
-                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, הלוואות) עם שיוך לאשראי</h3>
+                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, אינטרנט) עם שיוך לאשראי</h3>
                 </div>
                 <button onclick="openModal('installmentModal')" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl transition-colors">
                     + הוסף תשלום מתמשך
@@ -395,13 +395,13 @@
     <div id="installmentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך (כגון רב-קו)</h3>
+                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך / קבוע</h3>
                 <button onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form onsubmit="addInstallment(event)" class="space-y-4 text-xs font-medium">
                 <div>
                     <label class="block mb-1 text-slate-600">תיאור התשלום</label>
-                    <input type="text" id="instTitle" required placeholder="למשל: רב-קו ל-11 חודשים" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <input type="text" id="instTitle" required placeholder="למשל: רב-קו / אינטרנט" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -409,8 +409,8 @@
                         <input type="number" id="instAmount" required min="1" step="any" placeholder="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                     </div>
                     <div>
-                        <label class="block mb-1 text-slate-600">מספר חודשים כולל</label>
-                        <input type="number" id="instMonths" required min="1" max="120" placeholder="11" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                        <label class="block mb-1 text-slate-600">מספר חודשים (השאר ריק אם אין סיום)</label>
+                        <input type="number" id="instMonths" min="1" max="120" placeholder="לדוגמה: 11 (או ריק)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                     </div>
                 </div>
                 <div>
@@ -569,7 +569,7 @@
             monthsList.forEach((m, idx) => {
                 const btn = document.createElement('button');
                 btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
-                btn.textContent = m.name;
+                btn.textContent = `${m.code}. ${m.name}`;
                 btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
                 mContainer.appendChild(btn);
             });
@@ -581,7 +581,7 @@
             if (mSelect && ySelect) {
                 mSelect.innerHTML = '';
                 monthsList.forEach((m, i) => {
-                    mSelect.innerHTML += `<option value="${i}">${m.name}</option>`;
+                    mSelect.innerHTML += `<option value="${i}">${m.code}. ${m.name}</option>`;
                 });
                 ySelect.innerHTML = '';
                 for (let y = currentYear - 1; y <= currentYear + 3; y++) {
@@ -715,7 +715,8 @@
             e.preventDefault();
             const title = document.getElementById('instTitle').value;
             const amount = parseFloat(document.getElementById('instAmount').value);
-            const monthsCount = parseInt(document.getElementById('instMonths').value);
+            const monthsInput = document.getElementById('instMonths').value.trim();
+            const monthsCount = monthsInput === '' ? null : parseInt(monthsInput);
             const cardId = document.getElementById('instCardId').value;
             const startMonth = parseInt(document.getElementById('instStartMonth').value);
             const startYear = parseInt(document.getElementById('instStartYear').value);
@@ -751,8 +752,11 @@
                 let startAbsolute = inst.startYear * 12 + inst.startMonth;
                 let currentAbsolute = selYear * 12 + selMonth;
                 let diff = currentAbsolute - startAbsolute;
-                if (diff >= 0 && diff < inst.monthsCount) {
-                    total += inst.amount;
+                
+                if (inst.monthsCount === null || inst.monthsCount === undefined) {
+                    if (diff >= 0) total += inst.amount; // תשלום מתמשך ללא סוף
+                } else {
+                    if (diff >= 0 && diff < inst.monthsCount) total += inst.amount;
                 }
             });
             return total;
@@ -776,7 +780,11 @@
                 let startAbs = inst.startYear * 12 + inst.startMonth;
                 let curAbs = prevY * 12 + prevM;
                 let diff = curAbs - startAbs;
-                if (diff >= 0 && diff < inst.monthsCount) instTotal += inst.amount;
+                if (inst.monthsCount === null || inst.monthsCount === undefined) {
+                    if (diff >= 0) instTotal += inst.amount;
+                } else {
+                    if (diff >= 0 && diff < inst.monthsCount) instTotal += inst.amount;
+                }
             });
 
             const netCc = Math.max(0, totalCc - instTotal);
@@ -1027,19 +1035,43 @@
                     let startAbsolute = inst.startYear * 12 + inst.startMonth;
                     let currentAbsolute = selYear * 12 + selMonth;
                     let diff = currentAbsolute - startAbsolute;
-                    let isActive = diff >= 0 && diff < inst.monthsCount;
+
+                    let isOngoing = (inst.monthsCount === null || inst.monthsCount === undefined);
+                    let isActive = isOngoing ? (diff >= 0) : (diff >= 0 && diff < inst.monthsCount);
+
+                    let progressHtml = '';
+                    if (!isOngoing) {
+                        let passedMonths = Math.min(inst.monthsCount, Math.max(0, diff + 1));
+                        let paidPct = Math.round((passedMonths / inst.monthsCount) * 100);
+                        progressHtml = `
+                            <div class="mt-2 space-y-1">
+                                <div class="flex justify-between text-[11px] text-slate-500">
+                                    <span>שולם ${passedMonths} מתוך ${inst.monthsCount} חודשים</span>
+                                    <span class="font-bold text-amber-700">${paidPct}%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-amber-600 h-full rounded-full" style="width: ${paidPct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        progressHtml = `<div class="mt-2 text-[11px] text-emerald-600 font-bold">הוראת קבע / מתמשך (ללא הגבלת זמן)</div>`;
+                    }
 
                     instGrid.innerHTML += `
                         <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col justify-between ${!isActive ? 'opacity-50' : ''}">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="font-bold text-slate-800">${inst.title}</span>
-                                <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-slate-800">${inst.title}</span>
+                                    <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                                <div class="text-[11px] text-slate-400 mb-2">סטטוס: ${isActive ? '<span class="text-emerald-600 font-bold">פעיל החודש</span>' : 'לא פעיל בחודש זה'}</div>
+                                <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold text-xs">
+                                    <span class="text-slate-500">₪${inst.amount} לחודש</span>
+                                    <span class="text-amber-700">${isOngoing ? 'מתמשך' : 'סה"כ ₪' + (inst.amount * inst.monthsCount).toLocaleString()}</span>
+                                </div>
                             </div>
-                            <div class="text-[11px] text-slate-400 mb-2">סטטוס: ${isActive ? '<span class="text-emerald-600 font-bold">פעיל החודש</span>' : 'לא פעיל בחודש זה'}</div>
-                            <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold text-xs">
-                                <span class="text-slate-500">₪${inst.amount} לחודש (${inst.monthsCount} חודשים)</span>
-                                <span class="text-amber-700">סה"כ ₪${(inst.amount * inst.monthsCount).toLocaleString()}</span>
-                            </div>
+                            ${progressHtml}
                         </div>
                     `;
                 });
