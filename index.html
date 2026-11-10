@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול תקציב חכם - ציפיות מול מציאות (מחובר לענן)</title>
+    <!-- אייקון שקל בלשונית הדפדפן -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₪</text></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -425,7 +427,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Your Web App's Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBjTUPYGYcn8RRUUhMIuLxS87qYsasx67M",
             authDomain: "budget-management-6153c.firebaseapp.com",
@@ -436,7 +437,6 @@
             measurementId: "G-MC1QVLBRVR"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const docRef = doc(db, "budgets", "shared_family_data");
@@ -445,7 +445,6 @@
         window.docRef = docRef;
         window.setDoc = setDoc;
 
-        // Real-time synchronization listener
         onSnapshot(docRef, (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.data();
@@ -490,17 +489,9 @@
         ];
 
         let defaultExpenseCategories = [
-            'חשמל ומים',
-            'דיור',
-            'הלוואות',
-            'מזון',
-            'ביגוד',
-            'דמי כיס אברימי',
-            'דמי כיס חוי',
-            'תחבורה ודלק',
-            'בריאות',
-            'פנאי ובילויים',
-            'שונות'
+            'חשמל ומים', 'דיור', 'הלוואות', 'מזון', 'ביגוד',
+            'דמי כיס אברימי', 'דמי כיס חוי', 'תחבורה ודלק',
+            'בריאות', 'פנאי ובילויים', 'שונות'
         ];
 
         const currentYear = new Date().getFullYear();
@@ -562,500 +553,464 @@
             mContainer.innerHTML = '';
             monthsList.forEach((m, idx) => {
                 const btn = document.createElement('button');
-                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-600 hover:bg-slate-100'}`;
-                btn.textContent = `${m.name} ${m.code}`;
+                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
+                btn.textContent = m.name;
                 btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
                 mContainer.appendChild(btn);
             });
+        }
+
+        function populateInstallmentSelects() {
+            const mSelect = document.getElementById('instStartMonth');
+            const ySelect = document.getElementById('instStartYear');
+            if (mSelect && ySelect) {
+                mSelect.innerHTML = '';
+                monthsList.forEach((m, i) => {
+                    mSelect.innerHTML += `<option value="${i}">${m.name}</option>`;
+                });
+                ySelect.innerHTML = '';
+                for (let y = currentYear - 1; y <= currentYear + 3; y++) {
+                    ySelect.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+                }
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            if (modalId === 'transactionModal') {
+                populateCategoryDropdown();
+            } else if (modalId === 'installmentModal') {
+                populateInstallmentCardSelect();
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function populateCategoryDropdown() {
+            const select = document.getElementById('txCategory');
+            const type = document.getElementById('txType').value;
+            select.innerHTML = '';
+            if (type === 'expense') {
+                const cats = getAllCategories();
+                cats.forEach(c => {
+                    select.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+            } else {
+                ['משכורת', 'החזר מס', 'מתנה', 'אחר'].forEach(c => {
+                    select.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+            }
+        }
+
+        document.getElementById('txType')?.addEventListener('change', populateCategoryDropdown);
+
+        function populateInstallmentCardSelect() {
+            const select = document.getElementById('instCardId');
+            select.innerHTML = '';
+            const key = `${selYear}-${selMonth}`;
+            const cards = window.creditCards.filter(c => c.monthKey === key);
+            if (cards.length === 0) {
+                select.innerHTML = `<option value="">אין כרטיסים בחודש זה (הוסף קודם)</option>`;
+            } else {
+                cards.forEach(c => {
+                    select.innerHTML += `<option value="${c.id}">${c.company} (...${c.digits}) - ${c.holder}</option>`;
+                });
+            }
+        }
+
+        async function addTransaction(e) {
+            e.preventDefault();
+            const type = document.getElementById('txType').value;
+            const title = document.getElementById('txTitle').value;
+            const amount = parseFloat(document.getElementById('txAmount').value);
+            const category = document.getElementById('txCategory').value;
+
+            const newTx = {
+                id: 'tx_' + Date.now(),
+                year: selYear,
+                month: selMonth,
+                type,
+                title,
+                amount,
+                category
+            };
+
+            window.transactions.push(newTx);
+            await saveAll();
+            closeModal('transactionModal');
+            document.getElementById('txTitle').value = '';
+            document.getElementById('txAmount').value = '';
+            refreshApp();
+        }
+
+        async function deleteTransaction(id) {
+            window.transactions = window.transactions.filter(t => t.id !== id);
+            await saveAll();
+            refreshApp();
+        }
+
+        async function addCreditCard(e) {
+            e.preventDefault();
+            const holder = document.getElementById('ccHolder').value;
+            const digits = document.getElementById('ccDigits').value;
+            const company = document.getElementById('ccCompany').value;
+            const amount = parseFloat(document.getElementById('ccAmount').value);
+
+            const key = `${selYear}-${selMonth}`;
+            const newCard = {
+                id: 'cc_' + Date.now(),
+                monthKey: key,
+                holder,
+                digits,
+                company,
+                amount
+            };
+
+            window.creditCards.push(newCard);
+            await saveAll();
+            closeModal('creditCardModal');
+            document.getElementById('ccHolder').value = '';
+            document.getElementById('ccDigits').value = '';
+            document.getElementById('ccCompany').value = '';
+            document.getElementById('ccAmount').value = '';
+            refreshApp();
+        }
+
+        async function deleteCreditCard(id) {
+            window.creditCards = window.creditCards.filter(c => c.id !== id);
+            await saveAll();
+            refreshApp();
+        }
+
+        async function addInstallment(e) {
+            e.preventDefault();
+            const title = document.getElementById('instTitle').value;
+            const amount = parseFloat(document.getElementById('instAmount').value);
+            const monthsCount = parseInt(document.getElementById('instMonths').value);
+            const cardId = document.getElementById('instCardId').value;
+            const startMonth = parseInt(document.getElementById('instStartMonth').value);
+            const startYear = parseInt(document.getElementById('instStartYear').value);
+
+            const newInst = {
+                id: 'inst_' + Date.now(),
+                title,
+                amount,
+                monthsCount,
+                cardId,
+                startMonth,
+                startYear
+            };
+
+            window.installments.push(newInst);
+            await saveAll();
+            closeModal('installmentModal');
+            document.getElementById('instTitle').value = '';
+            document.getElementById('instAmount').value = '';
+            document.getElementById('instMonths').value = '';
+            refreshApp();
+        }
+
+        async function deleteInstallment(id) {
+            window.installments = window.installments.filter(i => i.id !== id);
+            await saveAll();
+            refreshApp();
+        }
+
+        function getActiveInstallmentsForCurrentMonth() {
+            let total = 0;
+            window.installments.forEach(inst => {
+                let startAbsolute = inst.startYear * 12 + inst.startMonth;
+                let currentAbsolute = selYear * 12 + selMonth;
+                let diff = currentAbsolute - startAbsolute;
+                if (diff >= 0 && diff < inst.monthsCount) {
+                    total += inst.amount;
+                }
+            });
+            return total;
         }
 
         function toggleCategoryBreakdown() {
             const section = document.getElementById('categoryBreakdownSection');
             const icon = document.getElementById('breakdownIcon');
             const btnText = document.getElementById('toggleBreakdownBtn');
-            
-            section.classList.toggle('hidden');
             if (section.classList.contains('hidden')) {
-                icon.setAttribute('data-lucide', 'chevron-down');
-                btnText.innerHTML = `<i data-lucide="chevron-down" class="w-3.5 h-3.5" id="breakdownIcon"></i> פתח פירוט קטגוריות צפויות`;
+                section.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+                renderBreakdownTable();
             } else {
-                icon.setAttribute('data-lucide', 'chevron-up');
-                btnText.innerHTML = `<i data-lucide="chevron-up" class="w-3.5 h-3.5" id="breakdownIcon"></i> סגור פירוט קטגוריות`;
+                section.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
             }
+        }
+
+        function renderBreakdownTable() {
+            const tbody = document.getElementById('breakdownTableBody');
+            tbody.innerHTML = '';
+            const cats = getAllCategories();
+            const key = `${selYear}-${selMonth}`;
+            if (!window.categoryBudgets[key]) {
+                window.categoryBudgets[key] = {};
+            }
+
+            cats.forEach(c => {
+                let val = window.categoryBudgets[key][c] || 0;
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-800">${c}</td>
+                    <td class="p-2.5">
+                        <input type="number" min="0" value="${val}" onchange="updateCategoryBudget('${c}', this.value)" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 w-32 text-xs focus:ring-2 focus:ring-purple-500/20">
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="removeCategory('${c}')" class="text-rose-500 hover:text-rose-700 font-bold p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
             lucide.createIcons();
         }
 
-        function updateCategoryBudgetVal(category, val) {
+        async function updateCategoryBudget(cat, val) {
             const key = `${selYear}-${selMonth}`;
             if (!window.categoryBudgets[key]) window.categoryBudgets[key] = {};
-            window.categoryBudgets[key][category] = parseFloat(val) || 0;
-            saveAll();
+            window.categoryBudgets[key][cat] = parseFloat(val) || 0;
+            await saveAll();
+            refreshApp();
         }
 
-        function addNewCustomCategory() {
+        async function addNewCustomCategory() {
             const input = document.getElementById('newCategoryInput');
-            const catName = input.value.trim();
-            if (catName && !getAllCategories().includes(catName)) {
-                window.customCategories.push(catName);
+            const val = input.value.trim();
+            if (val && !getAllCategories().includes(val)) {
+                window.customCategories.push(val);
                 input.value = '';
-                saveAll();
+                await saveAll();
+                renderBreakdownTable();
+                refreshApp();
             }
         }
 
-        function deleteCategory(catName) {
-            if (defaultExpenseCategories.includes(catName)) {
-                if (!window.hiddenCategories.includes(catName)) {
-                    window.hiddenCategories.push(catName);
+        async function removeCategory(cat) {
+            if (defaultExpenseCategories.includes(cat)) {
+                if (!window.hiddenCategories.includes(cat)) {
+                    window.hiddenCategories.push(cat);
                 }
             } else {
-                window.customCategories = window.customCategories.filter(c => c !== catName);
+                window.customCategories = window.customCategories.filter(c => c !== cat);
             }
-            Object.keys(window.categoryBudgets).forEach(k => {
-                if (window.categoryBudgets[k][catName]) delete window.categoryBudgets[k][catName];
-            });
-            saveAll();
+            await saveAll();
+            renderBreakdownTable();
+            refreshApp();
         }
 
-        function copyPreviousMonthTarget() {
-            let prevYear = selYear;
+        async function copyPreviousMonthTarget() {
             let prevMonth = selMonth - 1;
+            let prevYear = selYear;
             if (prevMonth < 0) {
                 prevMonth = 11;
                 prevYear -= 1;
             }
             const prevKey = `${prevYear}-${prevMonth}`;
             const currKey = `${selYear}-${selMonth}`;
-
             if (window.categoryBudgets[prevKey]) {
                 window.categoryBudgets[currKey] = JSON.parse(JSON.stringify(window.categoryBudgets[prevKey]));
-                saveAll();
+                await saveAll();
+                renderBreakdownTable();
+                refreshApp();
                 alert('הציפיות הועתקו בהצלחה מחודש קודם!');
             } else {
-                alert('לא נמצאו נתוני ציפיות שמורים בחודש הקודם.');
+                alert('לא נמצאו ציפיות שמורות בחודש הקודם.');
             }
         }
 
-        function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
-            if (id === 'transactionModal') {
-                populateTransactionCategorySelect();
-            } else if (id === 'installmentModal') {
-                populateInstallmentCardSelect();
-            }
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
-
-        function populateTransactionCategorySelect() {
-            const select = document.getElementById('txCategory');
-            select.innerHTML = '';
-            getAllCategories().forEach(c => {
-                select.innerHTML += `<option value="${c}">${c}</option>`;
-            });
-        }
-
-        function populateInstallmentCardSelect() {
-            const select = document.getElementById('instCardId');
-            select.innerHTML = '<option value="">ללא שיוך לאשראי (בנק / מזומן)</option>';
-            window.creditCards.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.company} (•••${c.digits} - ${c.holder})</option>`;
-            });
-        }
-
-        function addTransaction(e) {
-            e.preventDefault();
-            window.transactions.push({
-                id: Date.now().toString(),
-                title: document.getElementById('txTitle').value.trim(),
-                amount: parseFloat(document.getElementById('txAmount').value),
-                type: document.getElementById('txType').value,
-                category: document.getElementById('txCategory').value,
-                year: selYear,
-                month: selMonth,
-                isSystemGenerated: false
-            });
-            saveAll();
-            closeModal('transactionModal');
-            e.target.reset();
-        }
-
-        function deleteTransaction(id) {
-            window.transactions = window.transactions.filter(t => t.id !== id);
-            saveAll();
-        }
-
-        function addCreditCard(e) {
-            e.preventDefault();
-            const digits = document.getElementById('ccDigits').value.trim();
-            const amount = parseFloat(document.getElementById('ccAmount').value);
-            
-            let card = window.creditCards.find(c => c.digits === digits);
-            if (card) {
-                card.holder = document.getElementById('ccHolder').value.trim();
-                card.company = document.getElementById('ccCompany').value.trim();
-                if (!card.expenses) card.expenses = {};
-                card.expenses[`${selYear}-${selMonth}`] = amount;
-            } else {
-                window.creditCards.push({
-                    id: Date.now().toString(),
-                    holder: document.getElementById('ccHolder').value.trim(),
-                    digits,
-                    company: document.getElementById('ccCompany').value.trim(),
-                    expenses: { [`${selYear}-${selMonth}`]: amount }
-                });
-            }
-            saveAll();
-            closeModal('creditCardModal');
-            e.target.reset();
-        }
-
-        function deleteCreditCard(id) {
-            window.creditCards = window.creditCards.filter(c => c.id !== id);
-            saveAll();
-        }
-
-        function populateInstallmentSelects() {
-            const mSel = document.getElementById('instStartMonth');
-            const ySel = document.getElementById('instStartYear');
-            mSel.innerHTML = '';
-            ySel.innerHTML = '';
-            monthsList.forEach((m, idx) => mSel.innerHTML += `<option value="${idx}">${m.name} ${m.code}</option>`);
-            for (let i = 0; i < 5; i++) ySel.innerHTML += `<option value="${currentYear + i}">${currentYear + i}</option>`;
-        }
-
-        function addInstallment(e) {
-            e.preventDefault();
-            window.installments.push({
-                id: Date.now().toString(),
-                title: document.getElementById('instTitle').value.trim(),
-                monthlyAmount: parseFloat(document.getElementById('instAmount').value),
-                totalMonths: parseInt(document.getElementById('instMonths').value),
-                cardId: document.getElementById('instCardId').value,
-                startMonth: parseInt(document.getElementById('instStartMonth').value),
-                startYear: parseInt(document.getElementById('instStartYear').value)
-            });
-            saveAll();
-            closeModal('installmentModal');
-            e.target.reset();
-        }
-
-        function deleteInstallment(id) {
-            window.installments = window.installments.filter(i => i.id !== id);
-            saveAll();
-        }
-
-        function addSmallExpensesFromGap() {
+        async function addSmallExpensesFromGap() {
             if (currentCcGapCalculated <= 0) return;
-            window.transactions.push({
-                id: Date.now().toString(),
-                title: 'הוצאות קטנות באשראי ("פחיות" ופערים)',
-                amount: currentCcGapCalculated,
-                type: 'expense',
-                category: 'שונות',
+            const key = `${selYear}-${selMonth}`;
+            const newTx = {
+                id: 'tx_' + Date.now(),
                 year: selYear,
                 month: selMonth,
-                isSystemGenerated: false
-            });
-            saveAll();
+                type: 'expense',
+                title: 'השלמת פער קניות קטנות (אשראי מול מפורט)',
+                amount: currentCcGapCalculated,
+                category: 'שונות'
+            };
+            window.transactions.push(newTx);
+            await saveAll();
+            refreshApp();
         }
 
         function refreshApp() {
-            const currentTxs = (window.transactions || []).filter(t => t.year === selYear && t.month === selMonth && !t.isSystemGenerated);
-            const incomes = currentTxs.filter(t => t.type === 'income');
-            const manualExpenses = currentTxs.filter(t => t.type === 'expense');
+            const monthTxs = window.transactions.filter(t => t.year === selYear && t.month === selMonth);
+            const incomes = monthTxs.filter(t => t.type === 'income');
+            const manualExpenses = monthTxs.filter(t => t.type === 'expense');
 
-            const sumIncome = incomes.reduce((acc, t) => acc + t.amount, 0);
-            const sumExpenseManual = manualExpenses.reduce((acc, t) => acc + t.amount, 0);
+            const totalIncome = incomes.reduce((acc, t) => acc + t.amount, 0);
+            const totalManualExp = manualExpenses.reduce((acc, t) => acc + t.amount, 0);
 
-            // Active installments for current month
-            const activeInsts = (window.installments || []).filter(inst => {
-                const startTot = inst.startYear * 12 + inst.startMonth;
-                const curTot = selYear * 12 + selMonth;
-                const endTot = startTot + inst.totalMonths - 1;
-                return curTot >= startTot && curTot <= endTot;
-            });
-
-            let instExpensesList = [];
-            let sumInsts = 0;
-            activeInsts.forEach(inst => {
-                sumInsts += inst.monthlyAmount;
-                
-                let cardLabel = 'ללא שיוך אשראי';
-                if (inst.cardId) {
-                    const foundCard = (window.creditCards || []).find(c => c.id === inst.cardId);
-                    if (foundCard) cardLabel = `אשראי ${foundCard.company} (•••${foundCard.digits})`;
-                }
-
-                instExpensesList.push({
-                    id: `inst_${inst.id}`,
-                    title: `${inst.title} (${cardLabel})`,
-                    category: 'הלוואות',
-                    amount: inst.monthlyAmount,
-                    type: 'expense',
-                    isSystemGenerated: true
-                });
-            });
-
-            // Calculate total credit card billing
-            let sumCardsBilling = 0;
-            (window.creditCards || []).forEach(c => {
-                const cardBilling = (c.expenses && c.expenses[`${selYear}-${selMonth}`]) || 0;
-                const cardInstSum = activeInsts.filter(i => i.cardId === c.id).reduce((sum, i) => sum + i.monthlyAmount, 0);
-                sumCardsBilling += Math.max(0, cardBilling - cardInstSum);
-            });
-
-            const allExpenses = [...manualExpenses, ...instExpensesList];
-            const totalExpense = sumExpenseManual + sumInsts;
-            const net = sumIncome - totalExpense;
-
-            // Update Gap Model
-            currentCcGapCalculated = Math.max(0, sumCardsBilling - sumExpenseManual);
-            document.getElementById('modelCcSum').textContent = `₪${sumCardsBilling.toLocaleString()}`;
-            document.getElementById('modelManualExpSum').textContent = `₪${sumExpenseManual.toLocaleString()}`;
-            document.getElementById('modelGapAmount').textContent = `₪${currentCcGapCalculated.toLocaleString()}`;
-            
-            const addGapBtn = document.getElementById('addGapBtn');
-            if (currentCcGapCalculated > 0) {
-                addGapBtn.disabled = false;
-                addGapBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                addGapBtn.disabled = true;
-                addGapBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-
-            // Summary Cards
-            document.getElementById('summaryIncome').textContent = `₪${sumIncome.toLocaleString()}`;
-            document.getElementById('summaryExpense').textContent = `₪${totalExpense.toLocaleString()}`;
-
-            const netEl = document.getElementById('netAmount');
-            const netBadge = document.getElementById('netBadge');
-            const netCard = document.getElementById('netCard');
-
-            if (net >= 0) {
-                netEl.textContent = `₪${net.toLocaleString()}`;
-                netEl.className = 'text-3xl font-black mt-2 text-emerald-600';
-                netBadge.textContent = 'פלוס / מאוזן';
-                netBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700';
-                netCard.className = 'bg-white p-6 rounded-3xl shadow-sm border border-emerald-200 flex flex-col justify-between transition-all';
-            } else {
-                netEl.textContent = `- ₪${Math.abs(net).toLocaleString()}`;
-                netEl.className = 'text-3xl font-black mt-2 text-rose-600';
-                netBadge.textContent = 'מינוס / חריגה';
-                netBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700';
-                netCard.className = 'bg-white p-6 rounded-3xl shadow-sm border border-rose-200 flex flex-col justify-between transition-all';
-            }
-
-            // Target Budget Breakdown
             const key = `${selYear}-${selMonth}`;
-            const monthCats = (window.categoryBudgets && window.categoryBudgets[key]) || {};
-            let targetVal = 0;
-            const allCats = getAllCategories();
-            allCats.forEach(cat => {
-                targetVal += monthCats[cat] || 0;
-            });
+            const monthCards = window.creditCards.filter(c => c.monthKey === key);
+            const totalCcBank = monthCards.reduce((acc, c) => acc + c.amount, 0);
+            const totalInstallments = getActiveInstallmentsForCurrentMonth();
 
-            const breakdownBody = document.getElementById('breakdownTableBody');
-            breakdownBody.innerHTML = '';
-            allCats.forEach(cat => {
-                const val = monthCats[cat] || '';
-                breakdownBody.innerHTML += `
+            const netCc = Math.max(0, totalCcBank - totalInstallments);
+            const totalExpense = totalManualExp + netCc;
+            const netBalance = totalIncome - totalExpense;
+
+            document.getElementById('summaryIncome').textContent = '₪' + totalIncome.toLocaleString();
+            document.getElementById('summaryExpense').textContent = '₪' + totalExpense.toLocaleString();
+            
+            const netAmountEl = document.getElementById('netAmount');
+            netAmountEl.textContent = '₪' + netBalance.toLocaleString();
+            netAmountEl.className = `text-3xl font-black mt-2 ${netBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+            const netBadge = document.getElementById('netBadge');
+            netBadge.textContent = netBalance >= 0 ? 'יתרה חיובית' : 'גירעון';
+            netBadge.className = `px-2.5 py-1 rounded-full text-xs font-bold ${netBalance >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`;
+
+            const catBudgetsObj = window.categoryBudgets[key] || {};
+            const totalTarget = Object.values(catBudgetsObj).reduce((acc, v) => acc + v, 0);
+
+            document.getElementById('targetAmountDisplay').textContent = '₪' + totalTarget.toLocaleString();
+            document.getElementById('actualAmountDisplay').textContent = '₪' + totalExpense.toLocaleString();
+
+            const gap = totalTarget - totalExpense;
+            const gapEl = document.getElementById('gapAmountDisplay');
+            gapEl.textContent = (gap >= 0 ? 'נותר: ₪' : 'חריגה: ₪') + Math.abs(gap).toLocaleString();
+            gapEl.className = `text-lg font-black ${gap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+            const pct = totalTarget > 0 ? Math.min(100, Math.round((totalExpense / totalTarget) * 100)) : 0;
+            document.getElementById('targetProgressPct').textContent = pct + '%';
+            const bar = document.getElementById('targetProgressBar');
+            bar.style.width = pct + '%';
+            bar.className = `h-full rounded-full transition-all duration-500 ${pct > 100 ? 'bg-rose-500' : 'bg-purple-600'}`;
+
+            const ccGrid = document.getElementById('creditCardsGrid');
+            ccGrid.innerHTML = '';
+            if (monthCards.length === 0) {
+                ccGrid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">אין כרטיסי אשראי רשומים לחודש זה.</div>`;
+            } else {
+                monthCards.forEach(c => {
+                    ccGrid.innerHTML += `
+                        <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-slate-800">${c.company} (...${c.digits})</span>
+                                <button onclick="deleteCreditCard('${c.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                            <div class="text-xs text-slate-500 mb-3">מחזיק: ${c.holder}</div>
+                            <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold">
+                                <span class="text-slate-400 text-[11px]">חיוב בבנק:</span>
+                                <span class="text-indigo-600 text-sm">₪${c.amount.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const instGrid = document.getElementById('installmentsGrid');
+            instGrid.innerHTML = '';
+            if (window.installments.length === 0) {
+                instGrid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">אין תשלומים מתמשכים פעילים.</div>`;
+            } else {
+                window.installments.forEach(inst => {
+                    let startAbsolute = inst.startYear * 12 + inst.startMonth;
+                    let currentAbsolute = selYear * 12 + selMonth;
+                    let diff = currentAbsolute - startAbsolute;
+                    let isActive = diff >= 0 && diff < inst.monthsCount;
+
+                    instGrid.innerHTML += `
+                        <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col justify-between ${!isActive ? 'opacity-50' : ''}">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-slate-800">${inst.title}</span>
+                                <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mb-2">סטטוס: ${isActive ? '<span class="text-emerald-600 font-bold">פעיל החודש</span>' : 'לא פעיל בחודש זה'}</div>
+                            <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold text-xs">
+                                <span class="text-slate-500">₪${inst.amount} לחודש (${inst.monthsCount} חודשים)</span>
+                                <span class="text-amber-700">סה"כ ₪${(inst.amount * inst.monthsCount).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            currentCcGapCalculated = Math.max(0, netCc - totalManualExp);
+            document.getElementById('modelCcSum').textContent = '₪' + netCc.toLocaleString();
+            document.getElementById('modelManualExpSum').textContent = '₪' + totalManualExp.toLocaleString();
+            document.getElementById('modelGapAmount').textContent = '₪' + currentCcGapCalculated.toLocaleString();
+
+            const incBody = document.getElementById('incomeTableBody');
+            incBody.innerHTML = '';
+            document.getElementById('incomeCount').textContent = incomes.length + ' פריטים';
+            incomes.forEach(t => {
+                incBody.innerHTML += `
                     <tr>
-                        <td class="p-2.5 font-medium text-slate-800">${cat}</td>
-                        <td class="p-2.5">
-                            <input type="number" min="0" step="any" value="${val}" placeholder="0" 
-                                oninput="updateCategoryBudgetVal('${cat}', this.value)" 
-                                class="w-full sm:w-48 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-bold text-purple-700">
-                        </td>
-                        <td class="p-2.5 text-center">
-                            <button onclick="deleteCategory('${cat}')" class="text-rose-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 font-bold text-slate-800">${t.title}</td>
+                        <td class="p-3 text-slate-500">${t.category}</td>
+                        <td class="p-3 font-black text-emerald-600">₪${t.amount.toLocaleString()}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
             });
+            document.getElementById('incomeTableSum').textContent = '₪' + totalIncome.toLocaleString();
 
-            // Target Budget vs Actual Section UI
-            const targetDisp = document.getElementById('targetAmountDisplay');
-            const actualDisp = document.getElementById('actualAmountDisplay');
-            const gapDisp = document.getElementById('gapAmountDisplay');
-            const progressText = document.getElementById('targetProgressText');
-            const progressPct = document.getElementById('targetProgressPct');
-            const progressBar = document.getElementById('targetProgressBar');
+            const expBody = document.getElementById('expenseTableBody');
+            expBody.innerHTML = '';
+            document.getElementById('expenseCount').textContent = manualExpenses.length + ' פריטים';
+            manualExpenses.forEach(t => {
+                expBody.innerHTML += `
+                    <tr>
+                        <td class="p-3 font-bold text-slate-800">${t.title}</td>
+                        <td class="p-3 text-slate-500">${t.category}</td>
+                        <td class="p-3 font-black text-rose-600">₪${t.amount.toLocaleString()}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('expenseTableSum').textContent = '₪' + totalExpense.toLocaleString();
 
-            targetDisp.textContent = `₪${targetVal.toLocaleString()}`;
-            actualDisp.textContent = `₪${totalExpense.toLocaleString()}`;
-
-            if (targetVal > 0) {
-                const diff = targetVal - totalExpense;
-                const pct = Math.min(100, Math.round((totalExpense / targetVal) * 100));
-                
-                progressPct.textContent = `${pct}%`;
-                progressBar.style.width = `${pct}%`;
-
-                if (diff >= 0) {
-                    gapDisp.textContent = `₪${diff.toLocaleString()}`;
-                    gapDisp.className = 'text-lg font-black text-emerald-600';
-                    progressText.textContent = `נותרו ₪${diff.toLocaleString()} לניצול מהציפייה`;
-                    progressBar.className = 'h-full rounded-full transition-all duration-500 bg-emerald-500';
-                } else {
-                    const overspend = Math.abs(diff);
-                    gapDisp.textContent = `- ₪${overspend.toLocaleString()}`;
-                    gapDisp.className = 'text-lg font-black text-rose-600';
-                    progressText.textContent = `חריגה של ₪${overspend.toLocaleString()} מעבר לציפייה!`;
-                    progressBar.className = 'h-full rounded-full transition-all duration-500 bg-rose-500';
-                }
-            } else {
-                gapDisp.textContent = 'לא הוגדרו ציפיות';
-                gapDisp.className = 'text-lg font-black text-slate-400';
-                progressText.textContent = 'פתח את הפירוט למעלה והזן סכומים משוערים בקטגוריות';
-                progressPct.textContent = '0%';
-                progressBar.style.width = '0%';
-            }
-
-            renderTables(incomes, allExpenses, sumIncome, totalExpense);
-            renderCreditCards();
-            renderInstallments(activeInsts);
-            renderChart(sumIncome, totalExpense, net);
-
+            renderChart(totalIncome, totalExpense);
             lucide.createIcons();
         }
 
-        function renderTables(incomes, expenses, sumInc, sumExp) {
-            const incBody = document.getElementById('incomeTableBody');
-            const expBody = document.getElementById('expenseTableBody');
-            incBody.innerHTML = '';
-            expBody.innerHTML = '';
-
-            document.getElementById('incomeCount').textContent = `${incomes.length} פריטים`;
-            document.getElementById('expenseCount').textContent = `${expenses.length} פריטים`;
-            document.getElementById('incomeTableSum').textContent = `₪${sumInc.toLocaleString()}`;
-            document.getElementById('expenseTableSum').textContent = `₪${sumExp.toLocaleString()}`;
-
-            incomes.forEach(t => {
-                incBody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-medium text-slate-900">${t.title}</td>
-                        <td class="p-3 text-slate-500">${t.category}</td>
-                        <td class="p-3 font-bold text-emerald-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
-                    </tr>
-                `;
-            });
-
-            expenses.forEach(t => {
-                const deleteAction = t.isSystemGenerated 
-                    ? `<span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">מתמשך אוטומטי</span>`
-                    : `<button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`;
-
-                expBody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-medium text-slate-900">${t.title}</td>
-                        <td class="p-3 text-slate-500">${t.category}</td>
-                        <td class="p-3 font-bold text-rose-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center">${deleteAction}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        function renderCreditCards() {
-            const grid = document.getElementById('creditCardsGrid');
-            grid.innerHTML = '';
-            const cards = window.creditCards || [];
-            if (cards.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full py-4 text-center">טרם נוספו כרטיסי אשראי.</p>';
-                return;
-            }
-            const grads = ['card-grad-1', 'card-grad-2', 'card-grad-3'];
-            cards.forEach((c, idx) => {
-                const amount = (c.expenses && c.expenses[`${selYear}-${selMonth}`]) || 0;
-                const grad = grads[idx % grads.length];
-                grid.innerHTML += `
-                    <div class="${grad} rounded-2xl p-5 text-white shadow-md flex flex-col justify-between h-44 relative overflow-hidden">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold tracking-widest uppercase opacity-80">${c.company}</span>
-                            <button onclick="deleteCreditCard('${c.id}')" class="text-white/60 hover:text-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                        <div>
-                            <div class="text-xs text-white/70">חיוב כולל בבנק לחודש זה</div>
-                            <div class="text-2xl font-black mt-0.5">₪${amount.toLocaleString()}</div>
-                        </div>
-                        <div class="flex items-center justify-between text-xs pt-2 border-t border-white/10">
-                            <span class="font-medium">${c.holder}</span>
-                            <span class="font-mono">•••• ${c.digits}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderInstallments(activeInsts) {
-            const grid = document.getElementById('installmentsGrid');
-            grid.innerHTML = '';
-            const insts = window.installments || [];
-            if (insts.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full py-4 text-center">אין תשלומים מתמשכים מוגדרים.</p>';
-                return;
-            }
-            insts.forEach(inst => {
-                const startTot = inst.startYear * 12 + inst.startMonth;
-                const curTot = selYear * 12 + selMonth;
-                const paidNum = (curTot - startTot) + 1;
-                const isActive = paidNum >= 1 && paidNum <= inst.totalMonths;
-                const pct = Math.min(100, Math.max(0, (paidNum / inst.totalMonths) * 100));
-
-                let cardLabel = 'ללא שיוך';
-                if (inst.cardId) {
-                    const found = (window.creditCards || []).find(c => c.id === inst.cardId);
-                    if (found) cardLabel = `${found.company} (•••${found.digits})`;
-                }
-
-                grid.innerHTML += `
-                    <div class="p-4 rounded-2xl border ${isActive ? 'bg-amber-50/40 border-amber-200' : 'bg-slate-50 border-slate-200 opacity-60'} flex flex-col justify-between gap-3">
-                        <div>
-                            <div class="flex items-center justify-between">
-                                <h4 class="font-bold text-slate-800 text-xs">${inst.title}</h4>
-                                <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                            </div>
-                            <div class="text-base font-black text-slate-900 mt-1">₪${inst.monthlyAmount.toLocaleString()} <span class="text-xs font-normal text-slate-500">/ לחודש</span></div>
-                            <div class="text-[11px] text-indigo-600 mt-0.5 font-semibold">אשראי מקור: ${cardLabel}</div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-[11px] text-slate-500 mb-1">
-                                <span>תשלום ${isActive ? paidNum : (paidNum > inst.totalMonths ? inst.totalMonths : 0)} מתוך ${inst.totalMonths}</span>
-                                <span>${Math.round(pct)}%</span>
-                            </div>
-                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                                <div class="bg-amber-500 h-full rounded-full" style="width: ${pct}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderChart(income, expense, net) {
+        function renderChart(income, expense) {
             const ctx = document.getElementById('gapChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['הכנסות', 'הוצאות', 'פער נטו'],
-                    datasets: [{
-                        data: [income, expense, net],
-                        backgroundColor: ['#10b981', '#f43f5e', net >= 0 ? '#6366f1' : '#ef4444'],
-                        borderRadius: 12,
-                        barThickness: 45
-                    }]
+                    labels: ['הכנסות מול הוצאות'],
+                    datasets: [
+                        {
+                            label: 'הכנסות',
+                            data: [income],
+                            backgroundColor: '#10b981',
+                            borderRadius: 12
+                        },
+                        {
+                            label: 'הוצאות כוללות',
+                            data: [expense],
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 12
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Heebo', size: 12 } } }
+                    },
                     scales: {
-                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Heebo', size: 11 } } },
-                        x: { grid: { display: false }, ticks: { font: { family: 'Heebo', size: 12, weight: 'bold' } } }
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
