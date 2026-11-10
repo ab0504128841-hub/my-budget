@@ -654,7 +654,7 @@
 
             window.transactions.push(newTx);
             await saveAll();
-            closeModal('transactionModal'); // סגירה אוטומטית של החלון
+            closeModal('transactionModal'); // סגירה אוטומטית מידית
             document.getElementById('txTitle').value = '';
             document.getElementById('txAmount').value = '';
             refreshApp();
@@ -686,7 +686,7 @@
             window.creditCards.push(newCard);
             window.initializedMonths[key] = true;
             await saveAll();
-            closeModal('creditCardModal'); // סגירה אוטומטית של החלון
+            closeModal('creditCardModal'); // סגירה אוטומטית מידית
             document.getElementById('ccHolder').value = '';
             document.getElementById('ccDigits').value = '';
             document.getElementById('ccCompany').value = '';
@@ -732,7 +732,7 @@
 
             window.installments.push(newInst);
             await saveAll();
-            closeModal('installmentModal'); // סגירה אוטומטית של החלון
+            closeModal('installmentModal'); // סגירה אוטומטית מידית
             document.getElementById('instTitle').value = '';
             document.getElementById('instAmount').value = '';
             document.getElementById('instMonths').value = '';
