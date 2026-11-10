@@ -57,7 +57,7 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-        <!-- Summary Cards -->
+        <!-- Summary Cards (Updated to 4 columns) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             
             <!-- Previous Month Roll-over Balance -->
@@ -238,7 +238,7 @@
                     <div class="bg-amber-50 text-amber-600 p-2 rounded-xl">
                         <i data-lucide="repeat" class="w-5 h-5"></i>
                     </div>
-                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, אינטרנט) עם שיוך לאשראי</h3>
+                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, הלוואות) עם שיוך לאשראי</h3>
                 </div>
                 <button onclick="openModal('installmentModal')" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl transition-colors">
                     + הוסף תשלום מתמשך
@@ -324,11 +324,10 @@
     <div id="transactionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 id="txModalTitle" class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
-                <button type="button" onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <h3 class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
+                <button onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4 text-xs font-medium">
-                <input type="hidden" id="editTxId">
+            <form onsubmit="addTransaction(event)" class="space-y-4 text-xs font-medium">
                 <div>
                     <label class="block mb-1 text-slate-600">סוג תנועה</label>
                     <select id="txType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
@@ -363,9 +362,9 @@
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-bold text-slate-900">הוספת כרטיס אשראי</h3>
-                <button type="button" onclick="closeModal('creditCardModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="closeModal('creditCardModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form id="creditCardForm" onsubmit="addCreditCard(event)" class="space-y-4 text-xs font-medium">
+            <form onsubmit="addCreditCard(event)" class="space-y-4 text-xs font-medium">
                 <div>
                     <label class="block mb-1 text-slate-600">שם מחזיק הכרטיס</label>
                     <input type="text" id="ccHolder" required placeholder="למשל: ישראל ישראלי" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
@@ -396,14 +395,13 @@
     <div id="installmentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 id="instModalTitle" class="text-base font-bold text-slate-900">הוספת תשלום מתמשך / קבוע</h3>
-                <button type="button" onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך (כגון רב-קו)</h3>
+                <button onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form id="installmentForm" onsubmit="handleInstallmentSubmit(event)" class="space-y-4 text-xs font-medium">
-                <input type="hidden" id="editInstId">
+            <form onsubmit="addInstallment(event)" class="space-y-4 text-xs font-medium">
                 <div>
                     <label class="block mb-1 text-slate-600">תיאור התשלום</label>
-                    <input type="text" id="instTitle" required placeholder="למשל: רב-קו / אינטרנט" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <input type="text" id="instTitle" required placeholder="למשל: רב-קו ל-11 חודשים" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -411,8 +409,8 @@
                         <input type="number" id="instAmount" required min="1" step="any" placeholder="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                     </div>
                     <div>
-                        <label class="block mb-1 text-slate-600">מספר חודשים (השאר ריק אם אין סיום)</label>
-                        <input type="number" id="instMonths" min="1" max="120" placeholder="לדוגמה: 11 (או ריק)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                        <label class="block mb-1 text-slate-600">מספר חודשים כולל</label>
+                        <input type="number" id="instMonths" required min="1" max="120" placeholder="11" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                     </div>
                 </div>
                 <div>
@@ -571,7 +569,7 @@
             monthsList.forEach((m, idx) => {
                 const btn = document.createElement('button');
                 btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
-                btn.textContent = `${m.code}. ${m.name}`;
+                btn.textContent = m.name;
                 btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
                 mContainer.appendChild(btn);
             });
@@ -583,7 +581,7 @@
             if (mSelect && ySelect) {
                 mSelect.innerHTML = '';
                 monthsList.forEach((m, i) => {
-                    mSelect.innerHTML += `<option value="${i}">${m.code}. ${m.name}</option>`;
+                    mSelect.innerHTML += `<option value="${i}">${m.name}</option>`;
                 });
                 ySelect.innerHTML = '';
                 for (let y = currentYear - 1; y <= currentYear + 3; y++) {
@@ -593,20 +591,12 @@
         }
 
         function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
             if (modalId === 'transactionModal') {
-                document.getElementById('editTxId').value = '';
-                document.getElementById('txModalTitle').textContent = 'הוספת תנועה חדשה';
-                document.getElementById('transactionForm').reset();
                 populateCategoryDropdown();
-            } else if (modalId === 'creditCardModal') {
-                document.getElementById('creditCardForm').reset();
             } else if (modalId === 'installmentModal') {
-                document.getElementById('editInstId').value = '';
-                document.getElementById('instModalTitle').textContent = 'הוספת תשלום מתמשך / קבוע';
-                document.getElementById('installmentForm').reset();
                 populateInstallmentCardSelect();
             }
-            document.getElementById(modalId).classList.remove('hidden');
         }
 
         function closeModal(modalId) {
@@ -631,7 +621,7 @@
 
         document.getElementById('txType')?.addEventListener('change', populateCategoryDropdown);
 
-        function populateInstallmentCardSelect(selectedCardId = '') {
+        function populateInstallmentCardSelect() {
             const select = document.getElementById('instCardId');
             select.innerHTML = '';
             const key = `${selYear}-${selMonth}`;
@@ -640,57 +630,34 @@
                 select.innerHTML = `<option value="">אין כרטיסים בחודש זה (הוסף קודם)</option>`;
             } else {
                 cards.forEach(c => {
-                    const isSel = c.id === selectedCardId ? 'selected' : '';
-                    select.innerHTML += `<option value="${c.id}" ${isSel}>${c.company} (...${c.digits}) - ${c.holder}</option>`;
+                    select.innerHTML += `<option value="${c.id}">${c.company} (...${c.digits}) - ${c.holder}</option>`;
                 });
             }
         }
 
-        async function handleTransactionSubmit(e) {
+        async function addTransaction(e) {
             e.preventDefault();
-            const editId = document.getElementById('editTxId').value;
             const type = document.getElementById('txType').value;
             const title = document.getElementById('txTitle').value;
             const amount = parseFloat(document.getElementById('txAmount').value);
             const category = document.getElementById('txCategory').value;
 
-            if (editId) {
-                const tx = window.transactions.find(t => t.id === editId);
-                if (tx) {
-                    tx.type = type;
-                    tx.title = title;
-                    tx.amount = amount;
-                    tx.category = category;
-                }
-            } else {
-                const newTx = {
-                    id: 'tx_' + Date.now(),
-                    year: selYear,
-                    month: selMonth,
-                    type,
-                    title,
-                    amount,
-                    category
-                };
-                window.transactions.push(newTx);
-            }
+            const newTx = {
+                id: 'tx_' + Date.now(),
+                year: selYear,
+                month: selMonth,
+                type,
+                title,
+                amount,
+                category
+            };
 
+            window.transactions.push(newTx);
             await saveAll();
             closeModal('transactionModal');
+            document.getElementById('txTitle').value = '';
+            document.getElementById('txAmount').value = '';
             refreshApp();
-        }
-
-        function editTransaction(id) {
-            const tx = window.transactions.find(t => t.id === id);
-            if (!tx) return;
-            document.getElementById('editTxId').value = tx.id;
-            document.getElementById('txModalTitle').textContent = 'עריכת תנועה';
-            document.getElementById('txType').value = tx.type;
-            populateCategoryDropdown();
-            document.getElementById('txTitle').value = tx.title;
-            document.getElementById('txAmount').value = tx.amount;
-            document.getElementById('txCategory').value = tx.category;
-            document.getElementById('transactionModal').classList.remove('hidden');
         }
 
         async function deleteTransaction(id) {
@@ -717,15 +684,21 @@
             };
 
             window.creditCards.push(newCard);
+            // סמון שהחודש הוגדר ידנית
             window.initializedMonths[key] = true;
             await saveAll();
             closeModal('creditCardModal');
+            document.getElementById('ccHolder').value = '';
+            document.getElementById('ccDigits').value = '';
+            document.getElementById('ccCompany').value = '';
+            document.getElementById('ccAmount').value = '';
             refreshApp();
         }
 
         async function deleteCreditCard(id) {
             const key = `${selYear}-${selMonth}`;
             window.creditCards = window.creditCards.filter(c => c.id !== id);
+            // סימון שהחודש נערך ידנית כדי שמנגנון ההעתקה האוטומטי לא יחזיר אותו
             window.initializedMonths[key] = true;
             await saveAll();
             refreshApp();
@@ -740,57 +713,32 @@
             }
         }
 
-        async function handleInstallmentSubmit(e) {
+        async function addInstallment(e) {
             e.preventDefault();
-            const editId = document.getElementById('editInstId').value;
             const title = document.getElementById('instTitle').value;
             const amount = parseFloat(document.getElementById('instAmount').value);
-            const monthsInput = document.getElementById('instMonths').value.trim();
-            const monthsCount = monthsInput === '' ? null : parseInt(monthsInput);
+            const monthsCount = parseInt(document.getElementById('instMonths').value);
             const cardId = document.getElementById('instCardId').value;
             const startMonth = parseInt(document.getElementById('instStartMonth').value);
             const startYear = parseInt(document.getElementById('instStartYear').value);
 
-            if (editId) {
-                const inst = window.installments.find(i => i.id === editId);
-                if (inst) {
-                    inst.title = title;
-                    inst.amount = amount;
-                    inst.monthsCount = monthsCount;
-                    inst.cardId = cardId;
-                    inst.startMonth = startMonth;
-                    inst.startYear = startYear;
-                }
-            } else {
-                const newInst = {
-                    id: 'inst_' + Date.now(),
-                    title,
-                    amount,
-                    monthsCount,
-                    cardId,
-                    startMonth,
-                    startYear
-                };
-                window.installments.push(newInst);
-            }
+            const newInst = {
+                id: 'inst_' + Date.now(),
+                title,
+                amount,
+                monthsCount,
+                cardId,
+                startMonth,
+                startYear
+            };
 
+            window.installments.push(newInst);
             await saveAll();
             closeModal('installmentModal');
+            document.getElementById('instTitle').value = '';
+            document.getElementById('instAmount').value = '';
+            document.getElementById('instMonths').value = '';
             refreshApp();
-        }
-
-        function editInstallment(id) {
-            const inst = window.installments.find(i => i.id === id);
-            if (!inst) return;
-            document.getElementById('editInstId').value = inst.id;
-            document.getElementById('instModalTitle').textContent = 'עריכת תשלום מתמשך / קבוע';
-            document.getElementById('instTitle').value = inst.title;
-            document.getElementById('instAmount').value = inst.amount;
-            document.getElementById('instMonths').value = inst.monthsCount !== null ? inst.monthsCount : '';
-            populateInstallmentCardSelect(inst.cardId);
-            document.getElementById('instStartMonth').value = inst.startMonth;
-            document.getElementById('instStartYear').value = inst.startYear;
-            document.getElementById('installmentModal').classList.remove('hidden');
         }
 
         async function deleteInstallment(id) {
@@ -805,16 +753,14 @@
                 let startAbsolute = inst.startYear * 12 + inst.startMonth;
                 let currentAbsolute = selYear * 12 + selMonth;
                 let diff = currentAbsolute - startAbsolute;
-                
-                if (inst.monthsCount === null || inst.monthsCount === undefined) {
-                    if (diff >= 0) total += inst.amount;
-                } else {
-                    if (diff >= 0 && diff < inst.monthsCount) total += inst.amount;
+                if (diff >= 0 && diff < inst.monthsCount) {
+                    total += inst.amount;
                 }
             });
             return total;
         }
 
+        // חישוב יתרה/חוב נטו מחודש קודם
         function getPreviousMonthBalance(year, month) {
             let prevM = month - 1;
             let prevY = year;
@@ -833,16 +779,13 @@
                 let startAbs = inst.startYear * 12 + inst.startMonth;
                 let curAbs = prevY * 12 + prevM;
                 let diff = curAbs - startAbs;
-                if (inst.monthsCount === null || inst.monthsCount === undefined) {
-                    if (diff >= 0) instTotal += inst.amount;
-                } else {
-                    if (diff >= 0 && diff < inst.monthsCount) instTotal += inst.amount;
-                }
+                if (diff >= 0 && diff < inst.monthsCount) instTotal += inst.amount;
             });
 
             const netCc = Math.max(0, totalCc - instTotal);
             const totalExp = expManual + netCc;
 
+            // אם בחודש הקודם אין תנועות בכלל - נחזיר 0
             if (prevTxs.length === 0 && prevCards.length === 0) return 0;
 
             return inc - totalExp;
@@ -959,6 +902,7 @@
         function refreshApp() {
             const key = `${selYear}-${selMonth}`;
 
+            // העתקה חכמה וחד פעמית מחודש קודם (רק אם החודש לא סומן כמאותחל/נערך)
             if (!window.initializedMonths[key]) {
                 let prevM = selMonth - 1;
                 let prevY = selYear;
@@ -984,7 +928,9 @@
 
             let monthCards = window.creditCards.filter(c => c.monthKey === key);
 
+            // חישוב יתרת חודש קודם
             const prevBalance = getPreviousMonthBalance(selYear, selMonth);
+            const prevMonthCard = document.getElementById('prevMonthCard');
             const prevMonthAmtEl = document.getElementById('prevMonthAmount');
             const prevMonthDescEl = document.getElementById('prevMonthDesc');
             const prevMonthIconBg = document.getElementById('prevMonthIconBg');
@@ -1022,6 +968,7 @@
             const totalInstallments = getActiveInstallmentsForCurrentMonth();
             const netCc = Math.max(0, totalCcBank - totalInstallments);
 
+            // סכומים כוללים יתרת חודש קודם
             const totalIncome = monthIncomeTotal + rolloverIncome;
             const totalExpense = monthManualExpTotal + netCc + rolloverExpense;
             const netBalance = totalIncome - totalExpense;
@@ -1088,46 +1035,19 @@
                     let startAbsolute = inst.startYear * 12 + inst.startMonth;
                     let currentAbsolute = selYear * 12 + selMonth;
                     let diff = currentAbsolute - startAbsolute;
-
-                    let isOngoing = (inst.monthsCount === null || inst.monthsCount === undefined);
-                    let isActive = isOngoing ? (diff >= 0) : (diff >= 0 && diff < inst.monthsCount);
-
-                    let progressHtml = '';
-                    if (!isOngoing) {
-                        let passedMonths = Math.min(inst.monthsCount, Math.max(0, diff + 1));
-                        let paidPct = Math.round((passedMonths / inst.monthsCount) * 100);
-                        progressHtml = `
-                            <div class="mt-2 space-y-1">
-                                <div class="flex justify-between text-[11px] text-slate-500">
-                                    <span>שולם ${passedMonths} מתוך ${inst.monthsCount} חודשים</span>
-                                    <span class="font-bold text-amber-700">${paidPct}%</span>
-                                </div>
-                                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-amber-600 h-full rounded-full" style="width: ${paidPct}%"></div>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        progressHtml = `<div class="mt-2 text-[11px] text-emerald-600 font-bold">הוראת קבע / מתמשך (ללא הגבלת זמן)</div>`;
-                    }
+                    let isActive = diff >= 0 && diff < inst.monthsCount;
 
                     instGrid.innerHTML += `
                         <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col justify-between ${!isActive ? 'opacity-50' : ''}">
-                            <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-bold text-slate-800">${inst.title}</span>
-                                    <div class="flex items-center gap-1.5">
-                                        <button onclick="editInstallment('${inst.id}')" class="text-slate-400 hover:text-indigo-600" title="ערוך תשלום"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                        <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600" title="מחק תשלום"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div class="text-[11px] text-slate-400 mb-2">סטטוס: ${isActive ? '<span class="text-emerald-600 font-bold">פעיל החודש</span>' : 'לא פעיל בחודש זה'}</div>
-                                <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold text-xs">
-                                    <span class="text-slate-500">₪${inst.amount} לחודש</span>
-                                    <span class="text-amber-700">${isOngoing ? 'מתמשך' : 'סה"כ ₪' + (inst.amount * inst.monthsCount).toLocaleString()}</span>
-                                </div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-slate-800">${inst.title}</span>
+                                <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                             </div>
-                            ${progressHtml}
+                            <div class="text-[11px] text-slate-400 mb-2">סטטוס: ${isActive ? '<span class="text-emerald-600 font-bold">פעיל החודש</span>' : 'לא פעיל בחודש זה'}</div>
+                            <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 font-bold text-xs">
+                                <span class="text-slate-500">₪${inst.amount} לחודש (${inst.monthsCount} חודשים)</span>
+                                <span class="text-amber-700">סה"כ ₪${(inst.amount * inst.monthsCount).toLocaleString()}</span>
+                            </div>
                         </div>
                     `;
                 });
@@ -1141,6 +1061,7 @@
             const incBody = document.getElementById('incomeTableBody');
             incBody.innerHTML = '';
             
+            // הצגת שורת יתרה מחודש קודם בטבלה אם קיימת
             if (rolloverIncome > 0) {
                 incBody.innerHTML += `
                     <tr class="bg-emerald-50/50">
@@ -1159,9 +1080,8 @@
                         <td class="p-3 font-bold text-slate-800">${t.title}</td>
                         <td class="p-3 text-slate-500">${t.category}</td>
                         <td class="p-3 font-black text-emerald-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center flex items-center justify-center gap-1.5">
-                            <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600" title="ערוך"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600" title="מחק"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1171,6 +1091,7 @@
             const expBody = document.getElementById('expenseTableBody');
             expBody.innerHTML = '';
 
+            // הצגת שורת חוב מחודש קודם בטבלה אם קיים
             if (rolloverExpense > 0) {
                 expBody.innerHTML += `
                     <tr class="bg-rose-50/50">
@@ -1189,9 +1110,8 @@
                         <td class="p-3 font-bold text-slate-800">${t.title}</td>
                         <td class="p-3 text-slate-500">${t.category}</td>
                         <td class="p-3 font-black text-rose-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center flex items-center justify-center gap-1.5">
-                            <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600" title="ערוך"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600" title="מחק"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
