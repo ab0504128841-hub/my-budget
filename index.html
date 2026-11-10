@@ -57,7 +57,7 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-        <!-- Summary Cards (Updated to 4 columns) -->
+        <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             
             <!-- Previous Month Roll-over Balance -->
@@ -654,7 +654,7 @@
 
             window.transactions.push(newTx);
             await saveAll();
-            closeModal('transactionModal');
+            closeModal('transactionModal'); // סגירה אוטומטית של החלון
             document.getElementById('txTitle').value = '';
             document.getElementById('txAmount').value = '';
             refreshApp();
@@ -684,10 +684,9 @@
             };
 
             window.creditCards.push(newCard);
-            // סמון שהחודש הוגדר ידנית
             window.initializedMonths[key] = true;
             await saveAll();
-            closeModal('creditCardModal');
+            closeModal('creditCardModal'); // סגירה אוטומטית של החלון
             document.getElementById('ccHolder').value = '';
             document.getElementById('ccDigits').value = '';
             document.getElementById('ccCompany').value = '';
@@ -698,7 +697,6 @@
         async function deleteCreditCard(id) {
             const key = `${selYear}-${selMonth}`;
             window.creditCards = window.creditCards.filter(c => c.id !== id);
-            // סימון שהחודש נערך ידנית כדי שמנגנון ההעתקה האוטומטי לא יחזיר אותו
             window.initializedMonths[key] = true;
             await saveAll();
             refreshApp();
@@ -734,7 +732,7 @@
 
             window.installments.push(newInst);
             await saveAll();
-            closeModal('installmentModal');
+            closeModal('installmentModal'); // סגירה אוטומטית של החלון
             document.getElementById('instTitle').value = '';
             document.getElementById('instAmount').value = '';
             document.getElementById('instMonths').value = '';
@@ -760,7 +758,6 @@
             return total;
         }
 
-        // חישוב יתרה/חוב נטו מחודש קודם
         function getPreviousMonthBalance(year, month) {
             let prevM = month - 1;
             let prevY = year;
@@ -785,7 +782,6 @@
             const netCc = Math.max(0, totalCc - instTotal);
             const totalExp = expManual + netCc;
 
-            // אם בחודש הקודם אין תנועות בכלל - נחזיר 0
             if (prevTxs.length === 0 && prevCards.length === 0) return 0;
 
             return inc - totalExp;
@@ -902,7 +898,6 @@
         function refreshApp() {
             const key = `${selYear}-${selMonth}`;
 
-            // העתקה חכמה וחד פעמית מחודש קודם (רק אם החודש לא סומן כמאותחל/נערך)
             if (!window.initializedMonths[key]) {
                 let prevM = selMonth - 1;
                 let prevY = selYear;
@@ -928,9 +923,7 @@
 
             let monthCards = window.creditCards.filter(c => c.monthKey === key);
 
-            // חישוב יתרת חודש קודם
             const prevBalance = getPreviousMonthBalance(selYear, selMonth);
-            const prevMonthCard = document.getElementById('prevMonthCard');
             const prevMonthAmtEl = document.getElementById('prevMonthAmount');
             const prevMonthDescEl = document.getElementById('prevMonthDesc');
             const prevMonthIconBg = document.getElementById('prevMonthIconBg');
@@ -968,7 +961,6 @@
             const totalInstallments = getActiveInstallmentsForCurrentMonth();
             const netCc = Math.max(0, totalCcBank - totalInstallments);
 
-            // סכומים כוללים יתרת חודש קודם
             const totalIncome = monthIncomeTotal + rolloverIncome;
             const totalExpense = monthManualExpTotal + netCc + rolloverExpense;
             const netBalance = totalIncome - totalExpense;
@@ -1061,7 +1053,6 @@
             const incBody = document.getElementById('incomeTableBody');
             incBody.innerHTML = '';
             
-            // הצגת שורת יתרה מחודש קודם בטבלה אם קיימת
             if (rolloverIncome > 0) {
                 incBody.innerHTML += `
                     <tr class="bg-emerald-50/50">
@@ -1091,7 +1082,6 @@
             const expBody = document.getElementById('expenseTableBody');
             expBody.innerHTML = '';
 
-            // הצגת שורת חוב מחודש קודם בטבלה אם קיים
             if (rolloverExpense > 0) {
                 expBody.innerHTML += `
                     <tr class="bg-rose-50/50">
