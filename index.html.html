@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול תקציב חכם - ציפיות מול מציאות (מחובר לענן)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Font (Heebo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Heebo', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .card-grad-1 { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .card-grad-2 { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); }
+        .card-grad-3 { background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col pb-16">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-md shadow-indigo-100">
+                    <i data-lucide="wallet" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                        ניהול תקציב, ציפיות ואשראי
+                        <span id="syncStatus" class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">מתחבר לענן...</span>
+                    </h1>
+                    <p class="text-xs text-slate-500">שליטה מלאה בהכנסות, הוצאות ויעדים חודשיים (מסונכרן בזמן אמת)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openModal('transactionModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-100 transition-all active:scale-95">
+                    <i data-lucide="plus" class="w-4 h-4"></i> הוסף תנועה
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs: Years & Months -->
+    <nav class="bg-white border-b border-slate-200 sticky top-16 z-20 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center gap-2 py-2 overflow-x-auto border-b border-slate-100" id="yearsTabContainer"></div>
+            <div class="flex items-center gap-1 py-2 overflow-x-auto" id="monthsTabContainer"></div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Net Balance -->
+            <div id="netCard" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">יתרה נטו לחודש</span>
+                    <h2 id="netAmount" class="text-3xl font-black mt-2 text-slate-900">₪0</h2>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span>הכנסות פחות הוצאות</span>
+                    <span id="netBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">מאוזן</span>
+                </div>
+            </div>
+
+            <!-- Incomes -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">סך הכנסות</span>
+                        <h3 id="summaryIncome" class="text-2xl font-black mt-1 text-emerald-600">₪0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 mt-4">כולל כל מקורות ההכנסה לחודש זה</div>
+            </div>
+
+            <!-- Expenses -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">סך הוצאות כולל</span>
+                        <h3 id="summaryExpense" class="text-2xl font-black mt-1 text-rose-600">₪0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                        <i data-lucide="trending-down" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 mt-4">הוצאות מפורטות ותשלומים מתמשכים</div>
+            </div>
+        </div>
+
+        <!-- Budget vs Actual Card with Detailed Breakdown Tab -->
+        <div id="targetBudgetCard" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 transition-all">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                    <div class="bg-purple-50 text-purple-600 p-2.5 rounded-2xl">
+                        <i data-lucide="target" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">ציפיות הוצאה חודשיות (תקציב יעד מול מציאות)</h3>
+                        <p class="text-xs text-slate-500">השוואה בזמן אמת בין היעד שהגדרת לביצוע בפועל בחודש זה</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="copyPreviousMonthTarget()" class="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> העתק ציפיות מחודש קודם
+                    </button>
+                    <button onclick="toggleCategoryBreakdown()" id="toggleBreakdownBtn" class="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5">
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5" id="breakdownIcon"></i> פתח פירוט קטגוריות צפויות
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-right">
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-xs text-slate-500 block">ציפיית הוצאה כוללת (יעד)</span>
+                        <span id="targetAmountDisplay" class="text-lg font-black text-purple-700">₪0</span>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-xs text-slate-500 block">הוצאות בפועל (מציאות)</span>
+                        <span id="actualAmountDisplay" class="text-lg font-black text-rose-600">₪0</span>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-xs text-slate-500 block">פער (נותר לניצול / חריגה)</span>
+                        <span id="gapAmountDisplay" class="text-lg font-black text-slate-800">₪0</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div>
+                    <div class="flex justify-between text-xs font-bold mb-1.5" id="targetProgressLabels">
+                        <span id="targetProgressText" class="text-slate-600">ניצול היעד החודשי</span>
+                        <span id="targetProgressPct" class="text-slate-800">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                        <div id="targetProgressBar" class="h-full rounded-full transition-all duration-500 bg-purple-600" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Expandable Category Breakdown Table -->
+                <div id="categoryBreakdownSection" class="hidden pt-4 border-t border-slate-100 space-y-3">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">פירוט והגדרת סכומי ציפייה לפי קטגוריות</h4>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="newCategoryInput" placeholder="הוסף קטגוריה חדשה..." class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+                            <button onclick="addNewCustomCategory()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-colors">+ הוסף</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                                    <th class="p-2.5">קטגוריה</th>
+                                    <th class="p-2.5">ציפייה משוערת (₪)</th>
+                                    <th class="p-2.5 text-center">פעולה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="breakdownTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Cards & Gap Calculation Section -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-50 text-indigo-600 p-2 rounded-xl">
+                        <i data-lucide="credit-card" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">ניהול כרטיסי אשראי וחיוב חודשי כולל</h3>
+                        <p class="text-xs text-slate-500">מעקב אחר חיובי האשראי הגולמיים שירדו בבנק בחודש זה</p>
+                    </div>
+                </div>
+                <button onclick="openModal('creditCardModal')" class="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-colors">
+                    + הוסף כרטיס אשראי
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="creditCardsGrid"></div>
+
+            <!-- Credit vs Expenses Gap Model Box -->
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+                <div class="space-y-1 text-center md:text-right">
+                    <span class="font-bold text-slate-800 flex items-center gap-1.5 justify-center md:justify-start">
+                        <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i> מודל חישוב פער אשראי מול הוצאות מפורטות (הוצאות קטנות)
+                    </span>
+                    <p class="text-slate-500 max-w-xl">
+                        חיובי אשראי נטו (בניכוי תשלומים מתמשכים): <strong id="modelCcSum" class="text-slate-700">₪0</strong> | 
+                        הוצאות שוטפות מפורטות: <strong id="modelManualExpSum" class="text-slate-700">₪0</strong>
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-left md:text-right">
+                        <span class="text-[11px] text-slate-400 block">פער קניות קטנות ("פחיות"):</span>
+                        <span id="modelGapAmount" class="text-base font-black text-indigo-700">₪0</span>
+                    </div>
+                    <button onclick="addSmallExpensesFromGap()" id="addGapBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-all flex items-center gap-1">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> הוסף פער זה כהוצאה תחת "שונות"
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Long-term Installments Section -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2">
+                    <div class="bg-amber-50 text-amber-600 p-2 rounded-xl">
+                        <i data-lucide="repeat" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, הלוואות) עם שיוך לאשראי</h3>
+                </div>
+                <button onclick="openModal('installmentModal')" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl transition-colors">
+                    + הוסף תשלום מתמשך
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="installmentsGrid"></div>
+        </div>
+
+        <!-- Separate Tables: Incomes & Expenses -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Incomes Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="p-5 border-b border-slate-100 bg-emerald-50/40 flex items-center justify-between">
+                        <span class="font-bold text-emerald-800 text-sm flex items-center gap-2">
+                            <i data-lucide="arrow-down-left" class="w-4 h-4"></i> טבלת הכנסות
+                        </span>
+                        <span id="incomeCount" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">0 פריטים</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                                <tr>
+                                    <th class="p-3">תיאור</th>
+                                    <th class="p-3">קטגוריה</th>
+                                    <th class="p-3">סכום</th>
+                                    <th class="p-3 text-center">פעולה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incomeTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between font-bold text-xs">
+                    <span>סה"כ הכנסות:</span>
+                    <span id="incomeTableSum" class="text-emerald-600 text-sm">₪0</span>
+                </div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="p-5 border-b border-slate-100 bg-rose-50/40 flex items-center justify-between">
+                        <span class="font-bold text-rose-800 text-sm flex items-center gap-2">
+                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i> טבלת הוצאות בפועל (מפורטות ותשלומים)
+                        </span>
+                        <span id="expenseCount" class="text-xs bg-rose-100 text-rose-800 font-bold px-2.5 py-0.5 rounded-full">0 פריטים</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                                <tr>
+                                    <th class="p-3">תיאור ואשראי</th>
+                                    <th class="p-3">קטגוריה</th>
+                                    <th class="p-3">סכום</th>
+                                    <th class="p-3 text-center">פעולה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between font-bold text-xs">
+                    <span>סה"כ הוצאות כולל:</span>
+                    <span id="expenseTableSum" class="text-rose-600 text-sm">₪0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-900 mb-4">גרף השוואת פערים (הכנסות מול הוצאות כוללות)</h3>
+            <div class="w-full h-72 relative">
+                <canvas id="gapChart"></canvas>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODALS -->
+
+    <!-- Add Transaction Modal -->
+    <div id="transactionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
+                <button onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="addTransaction(event)" class="space-y-4 text-xs font-medium">
+                <div>
+                    <label class="block mb-1 text-slate-600">סוג תנועה</label>
+                    <select id="txType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                        <option value="expense">הוצאה</option>
+                        <option value="income">הכנסה</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-600">תיאור (כתיבה חופשית)</label>
+                    <input type="text" id="txTitle" required placeholder="למשל: קנייה בסופר..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-600">סכום (₪)</label>
+                    <input type="number" id="txAmount" required min="1" step="any" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-600">קטגוריה</label>
+                    <select id="txCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('transactionModal')" class="px-4 py-2 rounded-xl border border-slate-200">ביטול</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Credit Card Modal -->
+    <div id="creditCardModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-900">הוספת כרטיס אשראי</h3>
+                <button onclick="closeModal('creditCardModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="addCreditCard(event)" class="space-y-4 text-xs font-medium">
+                <div>
+                    <label class="block mb-1 text-slate-600">שם מחזיק הכרטיס</label>
+                    <input type="text" id="ccHolder" required placeholder="למשל: ישראל ישראלי" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block mb-1 text-slate-600">4 ספרות אחרונות</label>
+                        <input type="text" id="ccDigits" maxlength="4" required placeholder="1234" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-slate-600">חברת אשראי</label>
+                        <input type="text" id="ccCompany" required placeholder="ויזה / מאסטרכארד" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-600">סכום חיוב אשראי כולל בבנק לחודש זה (₪)</label>
+                    <input type="number" id="ccAmount" required min="0" step="any" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('creditCardModal')" class="px-4 py-2 rounded-xl border border-slate-200">ביטול</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Installment Modal -->
+    <div id="installmentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך (כגון רב-קו)</h3>
+                <button onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="addInstallment(event)" class="space-y-4 text-xs font-medium">
+                <div>
+                    <label class="block mb-1 text-slate-600">תיאור התשלום</label>
+                    <input type="text" id="instTitle" required placeholder="למשל: רב-קו ל-11 חודשים" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block mb-1 text-slate-600">סכום חודשי (₪)</label>
+                        <input type="number" id="instAmount" required min="1" step="any" placeholder="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-slate-600">מספר חודשים כולל</label>
+                        <input type="number" id="instMonths" required min="1" max="120" placeholder="11" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-600">שייך לכרטיס אשראי (ממנו יורד)</label>
+                    <select id="instCardId" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-600">חודש ושנת התחלה</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="instStartMonth" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5"></select>
+                        <select id="instStartYear" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5"></select>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('installmentModal')" class="px-4 py-2 rounded-xl border border-slate-200">ביטול</button>
+                    <button type="submit" class="bg-amber-600 text-white px-5 py-2 rounded-xl font-bold">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Cloud SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Your Web App's Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjTUPYGYcn8RRUUhMIuLxS87qYsasx67M",
+            authDomain: "budget-management-6153c.firebaseapp.com",
+            projectId: "budget-management-6153c",
+            storageBucket: "budget-management-6153c.firebasestorage.app",
+            messagingSenderId: "20964521822",
+            appId: "1:20964521822:web:c5a713b8423b4a0cc681cf",
+            measurementId: "G-MC1QVLBRVR"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "budgets", "shared_family_data");
+
+        window.db = db;
+        window.docRef = docRef;
+        window.setDoc = setDoc;
+
+        // Real-time synchronization listener
+        onSnapshot(docRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                window.transactions = data.transactions || [];
+                window.creditCards = data.creditCards || [];
+                window.installments = data.installments || [];
+                window.categoryBudgets = data.categoryBudgets || {};
+                window.hiddenCategories = data.hiddenCategories || [];
+                window.customCategories = data.customCategories || [];
+            }
+            const statusEl = document.getElementById('syncStatus');
+            if (statusEl) {
+                statusEl.textContent = 'מחובר בזמן אמת לענן';
+                statusEl.className = 'text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold';
+            }
+            window.refreshApp();
+        }, (error) => {
+            console.error("Cloud connection error:", error);
+            const statusEl = document.getElementById('syncStatus');
+            if (statusEl) {
+                statusEl.textContent = 'שגיאת חיבור ענן';
+                statusEl.className = 'text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-semibold';
+            }
+        });
+    </script>
+
+    <!-- Application Main Script Logic -->
+    <script>
+        const monthsList = [
+            { name: 'ינואר', code: '01' },
+            { name: 'פברואר', code: '02' },
+            { name: 'מרץ', code: '03' },
+            { name: 'אפריל', code: '04' },
+            { name: 'מאי', code: '05' },
+            { name: 'יוני', code: '06' },
+            { name: 'יולי', code: '07' },
+            { name: 'אוגוסט', code: '08' },
+            { name: 'ספטמבר', code: '09' },
+            { name: 'אוקטובר', code: '10' },
+            { name: 'נובמבר', code: '11' },
+            { name: 'דצמבר', code: '12' }
+        ];
+
+        let defaultExpenseCategories = [
+            'חשמל ומים',
+            'דיור',
+            'הלוואות',
+            'מזון',
+            'ביגוד',
+            'דמי כיס אברימי',
+            'דמי כיס חוי',
+            'תחבורה ודלק',
+            'בריאות',
+            'פנאי ובילויים',
+            'שונות'
+        ];
+
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth();
+
+        let selYear = currentYear;
+        let selMonth = currentMonth;
+
+        window.transactions = [];
+        window.creditCards = [];
+        window.installments = [];
+        window.categoryBudgets = {};
+        window.hiddenCategories = [];
+        window.customCategories = [];
+
+        let currentCcGapCalculated = 0;
+        let chartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTabs();
+            populateInstallmentSelects();
+        });
+
+        async function saveAll() {
+            if (window.docRef && window.setDoc) {
+                try {
+                    await window.setDoc(window.docRef, {
+                        transactions: window.transactions,
+                        creditCards: window.creditCards,
+                        installments: window.installments,
+                        categoryBudgets: window.categoryBudgets,
+                        hiddenCategories: window.hiddenCategories,
+                        customCategories: window.customCategories
+                    });
+                } catch (e) {
+                    console.error("Error saving data to Firebase:", e);
+                }
+            }
+        }
+
+        function getAllCategories() {
+            const activeDefaults = defaultExpenseCategories.filter(c => !window.hiddenCategories.includes(c));
+            return [...activeDefaults, ...window.customCategories];
+        }
+
+        function initTabs() {
+            const yContainer = document.getElementById('yearsTabContainer');
+            yContainer.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const y = currentYear + i;
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-1.5 rounded-full text-xs font-bold transition-all ${y === selYear ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+                btn.textContent = y;
+                btn.onclick = () => { selYear = y; initTabs(); refreshApp(); };
+                yContainer.appendChild(btn);
+            }
+
+            const mContainer = document.getElementById('monthsTabContainer');
+            mContainer.innerHTML = '';
+            monthsList.forEach((m, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-600 hover:bg-slate-100'}`;
+                btn.textContent = `${m.name} ${m.code}`;
+                btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
+                mContainer.appendChild(btn);
+            });
+        }
+
+        function toggleCategoryBreakdown() {
+            const section = document.getElementById('categoryBreakdownSection');
+            const icon = document.getElementById('breakdownIcon');
+            const btnText = document.getElementById('toggleBreakdownBtn');
+            
+            section.classList.toggle('hidden');
+            if (section.classList.contains('hidden')) {
+                icon.setAttribute('data-lucide', 'chevron-down');
+                btnText.innerHTML = `<i data-lucide="chevron-down" class="w-3.5 h-3.5" id="breakdownIcon"></i> פתח פירוט קטגוריות צפויות`;
+            } else {
+                icon.setAttribute('data-lucide', 'chevron-up');
+                btnText.innerHTML = `<i data-lucide="chevron-up" class="w-3.5 h-3.5" id="breakdownIcon"></i> סגור פירוט קטגוריות`;
+            }
+            lucide.createIcons();
+        }
+
+        function updateCategoryBudgetVal(category, val) {
+            const key = `${selYear}-${selMonth}`;
+            if (!window.categoryBudgets[key]) window.categoryBudgets[key] = {};
+            window.categoryBudgets[key][category] = parseFloat(val) || 0;
+            saveAll();
+        }
+
+        function addNewCustomCategory() {
+            const input = document.getElementById('newCategoryInput');
+            const catName = input.value.trim();
+            if (catName && !getAllCategories().includes(catName)) {
+                window.customCategories.push(catName);
+                input.value = '';
+                saveAll();
+            }
+        }
+
+        function deleteCategory(catName) {
+            if (defaultExpenseCategories.includes(catName)) {
+                if (!window.hiddenCategories.includes(catName)) {
+                    window.hiddenCategories.push(catName);
+                }
+            } else {
+                window.customCategories = window.customCategories.filter(c => c !== catName);
+            }
+            Object.keys(window.categoryBudgets).forEach(k => {
+                if (window.categoryBudgets[k][catName]) delete window.categoryBudgets[k][catName];
+            });
+            saveAll();
+        }
+
+        function copyPreviousMonthTarget() {
+            let prevYear = selYear;
+            let prevMonth = selMonth - 1;
+            if (prevMonth < 0) {
+                prevMonth = 11;
+                prevYear -= 1;
+            }
+            const prevKey = `${prevYear}-${prevMonth}`;
+            const currKey = `${selYear}-${selMonth}`;
+
+            if (window.categoryBudgets[prevKey]) {
+                window.categoryBudgets[currKey] = JSON.parse(JSON.stringify(window.categoryBudgets[prevKey]));
+                saveAll();
+                alert('הציפיות הועתקו בהצלחה מחודש קודם!');
+            } else {
+                alert('לא נמצאו נתוני ציפיות שמורים בחודש הקודם.');
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'transactionModal') {
+                populateTransactionCategorySelect();
+            } else if (id === 'installmentModal') {
+                populateInstallmentCardSelect();
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function populateTransactionCategorySelect() {
+            const select = document.getElementById('txCategory');
+            select.innerHTML = '';
+            getAllCategories().forEach(c => {
+                select.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+        }
+
+        function populateInstallmentCardSelect() {
+            const select = document.getElementById('instCardId');
+            select.innerHTML = '<option value="">ללא שיוך לאשראי (בנק / מזומן)</option>';
+            window.creditCards.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.company} (•••${c.digits} - ${c.holder})</option>`;
+            });
+        }
+
+        function addTransaction(e) {
+            e.preventDefault();
+            window.transactions.push({
+                id: Date.now().toString(),
+                title: document.getElementById('txTitle').value.trim(),
+                amount: parseFloat(document.getElementById('txAmount').value),
+                type: document.getElementById('txType').value,
+                category: document.getElementById('txCategory').value,
+                year: selYear,
+                month: selMonth,
+                isSystemGenerated: false
+            });
+            saveAll();
+            closeModal('transactionModal');
+            e.target.reset();
+        }
+
+        function deleteTransaction(id) {
+            window.transactions = window.transactions.filter(t => t.id !== id);
+            saveAll();
+        }
+
+        function addCreditCard(e) {
+            e.preventDefault();
+            const digits = document.getElementById('ccDigits').value.trim();
+            const amount = parseFloat(document.getElementById('ccAmount').value);
+            
+            let card = window.creditCards.find(c => c.digits === digits);
+            if (card) {
+                card.holder = document.getElementById('ccHolder').value.trim();
+                card.company = document.getElementById('ccCompany').value.trim();
+                if (!card.expenses) card.expenses = {};
+                card.expenses[`${selYear}-${selMonth}`] = amount;
+            } else {
+                window.creditCards.push({
+                    id: Date.now().toString(),
+                    holder: document.getElementById('ccHolder').value.trim(),
+                    digits,
+                    company: document.getElementById('ccCompany').value.trim(),
+                    expenses: { [`${selYear}-${selMonth}`]: amount }
+                });
+            }
+            saveAll();
+            closeModal('creditCardModal');
+            e.target.reset();
+        }
+
+        function deleteCreditCard(id) {
+            window.creditCards = window.creditCards.filter(c => c.id !== id);
+            saveAll();
+        }
+
+        function populateInstallmentSelects() {
+            const mSel = document.getElementById('instStartMonth');
+            const ySel = document.getElementById('instStartYear');
+            mSel.innerHTML = '';
+            ySel.innerHTML = '';
+            monthsList.forEach((m, idx) => mSel.innerHTML += `<option value="${idx}">${m.name} ${m.code}</option>`);
+            for (let i = 0; i < 5; i++) ySel.innerHTML += `<option value="${currentYear + i}">${currentYear + i}</option>`;
+        }
+
+        function addInstallment(e) {
+            e.preventDefault();
+            window.installments.push({
+                id: Date.now().toString(),
+                title: document.getElementById('instTitle').value.trim(),
+                monthlyAmount: parseFloat(document.getElementById('instAmount').value),
+                totalMonths: parseInt(document.getElementById('instMonths').value),
+                cardId: document.getElementById('instCardId').value,
+                startMonth: parseInt(document.getElementById('instStartMonth').value),
+                startYear: parseInt(document.getElementById('instStartYear').value)
+            });
+            saveAll();
+            closeModal('installmentModal');
+            e.target.reset();
+        }
+
+        function deleteInstallment(id) {
+            window.installments = window.installments.filter(i => i.id !== id);
+            saveAll();
+        }
+
+        function addSmallExpensesFromGap() {
+            if (currentCcGapCalculated <= 0) return;
+            window.transactions.push({
+                id: Date.now().toString(),
+                title: 'הוצאות קטנות באשראי ("פחיות" ופערים)',
+                amount: currentCcGapCalculated,
+                type: 'expense',
+                category: 'שונות',
+                year: selYear,
+                month: selMonth,
+                isSystemGenerated: false
+            });
+            saveAll();
+        }
+
+        function refreshApp() {
+            const currentTxs = (window.transactions || []).filter(t => t.year === selYear && t.month === selMonth && !t.isSystemGenerated);
+            const incomes = currentTxs.filter(t => t.type === 'income');
+            const manualExpenses = currentTxs.filter(t => t.type === 'expense');
+
+            const sumIncome = incomes.reduce((acc, t) => acc + t.amount, 0);
+            const sumExpenseManual = manualExpenses.reduce((acc, t) => acc + t.amount, 0);
+
+            // Active installments for current month
+            const activeInsts = (window.installments || []).filter(inst => {
+                const startTot = inst.startYear * 12 + inst.startMonth;
+                const curTot = selYear * 12 + selMonth;
+                const endTot = startTot + inst.totalMonths - 1;
+                return curTot >= startTot && curTot <= endTot;
+            });
+
+            let instExpensesList = [];
+            let sumInsts = 0;
+            activeInsts.forEach(inst => {
+                sumInsts += inst.monthlyAmount;
+                
+                let cardLabel = 'ללא שיוך אשראי';
+                if (inst.cardId) {
+                    const foundCard = (window.creditCards || []).find(c => c.id === inst.cardId);
+                    if (foundCard) cardLabel = `אשראי ${foundCard.company} (•••${foundCard.digits})`;
+                }
+
+                instExpensesList.push({
+                    id: `inst_${inst.id}`,
+                    title: `${inst.title} (${cardLabel})`,
+                    category: 'הלוואות',
+                    amount: inst.monthlyAmount,
+                    type: 'expense',
+                    isSystemGenerated: true
+                });
+            });
+
+            // Calculate total credit card billing
+            let sumCardsBilling = 0;
+            (window.creditCards || []).forEach(c => {
+                const cardBilling = (c.expenses && c.expenses[`${selYear}-${selMonth}`]) || 0;
+                const cardInstSum = activeInsts.filter(i => i.cardId === c.id).reduce((sum, i) => sum + i.monthlyAmount, 0);
+                sumCardsBilling += Math.max(0, cardBilling - cardInstSum);
+            });
+
+            const allExpenses = [...manualExpenses, ...instExpensesList];
+            const totalExpense = sumExpenseManual + sumInsts;
+            const net = sumIncome - totalExpense;
+
+            // Update Gap Model
+            currentCcGapCalculated = Math.max(0, sumCardsBilling - sumExpenseManual);
+            document.getElementById('modelCcSum').textContent = `₪${sumCardsBilling.toLocaleString()}`;
+            document.getElementById('modelManualExpSum').textContent = `₪${sumExpenseManual.toLocaleString()}`;
+            document.getElementById('modelGapAmount').textContent = `₪${currentCcGapCalculated.toLocaleString()}`;
+            
+            const addGapBtn = document.getElementById('addGapBtn');
+            if (currentCcGapCalculated > 0) {
+                addGapBtn.disabled = false;
+                addGapBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                addGapBtn.disabled = true;
+                addGapBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            // Summary Cards
+            document.getElementById('summaryIncome').textContent = `₪${sumIncome.toLocaleString()}`;
+            document.getElementById('summaryExpense').textContent = `₪${totalExpense.toLocaleString()}`;
+
+            const netEl = document.getElementById('netAmount');
+            const netBadge = document.getElementById('netBadge');
+            const netCard = document.getElementById('netCard');
+
+            if (net >= 0) {
+                netEl.textContent = `₪${net.toLocaleString()}`;
+                netEl.className = 'text-3xl font-black mt-2 text-emerald-600';
+                netBadge.textContent = 'פלוס / מאוזן';
+                netBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700';
+                netCard.className = 'bg-white p-6 rounded-3xl shadow-sm border border-emerald-200 flex flex-col justify-between transition-all';
+            } else {
+                netEl.textContent = `- ₪${Math.abs(net).toLocaleString()}`;
+                netEl.className = 'text-3xl font-black mt-2 text-rose-600';
+                netBadge.textContent = 'מינוס / חריגה';
+                netBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700';
+                netCard.className = 'bg-white p-6 rounded-3xl shadow-sm border border-rose-200 flex flex-col justify-between transition-all';
+            }
+
+            // Target Budget Breakdown
+            const key = `${selYear}-${selMonth}`;
+            const monthCats = (window.categoryBudgets && window.categoryBudgets[key]) || {};
+            let targetVal = 0;
+            const allCats = getAllCategories();
+            allCats.forEach(cat => {
+                targetVal += monthCats[cat] || 0;
+            });
+
+            const breakdownBody = document.getElementById('breakdownTableBody');
+            breakdownBody.innerHTML = '';
+            allCats.forEach(cat => {
+                const val = monthCats[cat] || '';
+                breakdownBody.innerHTML += `
+                    <tr>
+                        <td class="p-2.5 font-medium text-slate-800">${cat}</td>
+                        <td class="p-2.5">
+                            <input type="number" min="0" step="any" value="${val}" placeholder="0" 
+                                oninput="updateCategoryBudgetVal('${cat}', this.value)" 
+                                class="w-full sm:w-48 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-bold text-purple-700">
+                        </td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="deleteCategory('${cat}')" class="text-rose-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Target Budget vs Actual Section UI
+            const targetDisp = document.getElementById('targetAmountDisplay');
+            const actualDisp = document.getElementById('actualAmountDisplay');
+            const gapDisp = document.getElementById('gapAmountDisplay');
+            const progressText = document.getElementById('targetProgressText');
+            const progressPct = document.getElementById('targetProgressPct');
+            const progressBar = document.getElementById('targetProgressBar');
+
+            targetDisp.textContent = `₪${targetVal.toLocaleString()}`;
+            actualDisp.textContent = `₪${totalExpense.toLocaleString()}`;
+
+            if (targetVal > 0) {
+                const diff = targetVal - totalExpense;
+                const pct = Math.min(100, Math.round((totalExpense / targetVal) * 100));
+                
+                progressPct.textContent = `${pct}%`;
+                progressBar.style.width = `${pct}%`;
+
+                if (diff >= 0) {
+                    gapDisp.textContent = `₪${diff.toLocaleString()}`;
+                    gapDisp.className = 'text-lg font-black text-emerald-600';
+                    progressText.textContent = `נותרו ₪${diff.toLocaleString()} לניצול מהציפייה`;
+                    progressBar.className = 'h-full rounded-full transition-all duration-500 bg-emerald-500';
+                } else {
+                    const overspend = Math.abs(diff);
+                    gapDisp.textContent = `- ₪${overspend.toLocaleString()}`;
+                    gapDisp.className = 'text-lg font-black text-rose-600';
+                    progressText.textContent = `חריגה של ₪${overspend.toLocaleString()} מעבר לציפייה!`;
+                    progressBar.className = 'h-full rounded-full transition-all duration-500 bg-rose-500';
+                }
+            } else {
+                gapDisp.textContent = 'לא הוגדרו ציפיות';
+                gapDisp.className = 'text-lg font-black text-slate-400';
+                progressText.textContent = 'פתח את הפירוט למעלה והזן סכומים משוערים בקטגוריות';
+                progressPct.textContent = '0%';
+                progressBar.style.width = '0%';
+            }
+
+            renderTables(incomes, allExpenses, sumIncome, totalExpense);
+            renderCreditCards();
+            renderInstallments(activeInsts);
+            renderChart(sumIncome, totalExpense, net);
+
+            lucide.createIcons();
+        }
+
+        function renderTables(incomes, expenses, sumInc, sumExp) {
+            const incBody = document.getElementById('incomeTableBody');
+            const expBody = document.getElementById('expenseTableBody');
+            incBody.innerHTML = '';
+            expBody.innerHTML = '';
+
+            document.getElementById('incomeCount').textContent = `${incomes.length} פריטים`;
+            document.getElementById('expenseCount').textContent = `${expenses.length} פריטים`;
+            document.getElementById('incomeTableSum').textContent = `₪${sumInc.toLocaleString()}`;
+            document.getElementById('expenseTableSum').textContent = `₪${sumExp.toLocaleString()}`;
+
+            incomes.forEach(t => {
+                incBody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-900">${t.title}</td>
+                        <td class="p-3 text-slate-500">${t.category}</td>
+                        <td class="p-3 font-bold text-emerald-600">₪${t.amount.toLocaleString()}</td>
+                        <td class="p-3 text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
+                    </tr>
+                `;
+            });
+
+            expenses.forEach(t => {
+                const deleteAction = t.isSystemGenerated 
+                    ? `<span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">מתמשך אוטומטי</span>`
+                    : `<button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`;
+
+                expBody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-900">${t.title}</td>
+                        <td class="p-3 text-slate-500">${t.category}</td>
+                        <td class="p-3 font-bold text-rose-600">₪${t.amount.toLocaleString()}</td>
+                        <td class="p-3 text-center">${deleteAction}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderCreditCards() {
+            const grid = document.getElementById('creditCardsGrid');
+            grid.innerHTML = '';
+            const cards = window.creditCards || [];
+            if (cards.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full py-4 text-center">טרם נוספו כרטיסי אשראי.</p>';
+                return;
+            }
+            const grads = ['card-grad-1', 'card-grad-2', 'card-grad-3'];
+            cards.forEach((c, idx) => {
+                const amount = (c.expenses && c.expenses[`${selYear}-${selMonth}`]) || 0;
+                const grad = grads[idx % grads.length];
+                grid.innerHTML += `
+                    <div class="${grad} rounded-2xl p-5 text-white shadow-md flex flex-col justify-between h-44 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold tracking-widest uppercase opacity-80">${c.company}</span>
+                            <button onclick="deleteCreditCard('${c.id}')" class="text-white/60 hover:text-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                        <div>
+                            <div class="text-xs text-white/70">חיוב כולל בבנק לחודש זה</div>
+                            <div class="text-2xl font-black mt-0.5">₪${amount.toLocaleString()}</div>
+                        </div>
+                        <div class="flex items-center justify-between text-xs pt-2 border-t border-white/10">
+                            <span class="font-medium">${c.holder}</span>
+                            <span class="font-mono">•••• ${c.digits}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderInstallments(activeInsts) {
+            const grid = document.getElementById('installmentsGrid');
+            grid.innerHTML = '';
+            const insts = window.installments || [];
+            if (insts.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full py-4 text-center">אין תשלומים מתמשכים מוגדרים.</p>';
+                return;
+            }
+            insts.forEach(inst => {
+                const startTot = inst.startYear * 12 + inst.startMonth;
+                const curTot = selYear * 12 + selMonth;
+                const paidNum = (curTot - startTot) + 1;
+                const isActive = paidNum >= 1 && paidNum <= inst.totalMonths;
+                const pct = Math.min(100, Math.max(0, (paidNum / inst.totalMonths) * 100));
+
+                let cardLabel = 'ללא שיוך';
+                if (inst.cardId) {
+                    const found = (window.creditCards || []).find(c => c.id === inst.cardId);
+                    if (found) cardLabel = `${found.company} (•••${found.digits})`;
+                }
+
+                grid.innerHTML += `
+                    <div class="p-4 rounded-2xl border ${isActive ? 'bg-amber-50/40 border-amber-200' : 'bg-slate-50 border-slate-200 opacity-60'} flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-slate-800 text-xs">${inst.title}</h4>
+                                <button onclick="deleteInstallment('${inst.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                            <div class="text-base font-black text-slate-900 mt-1">₪${inst.monthlyAmount.toLocaleString()} <span class="text-xs font-normal text-slate-500">/ לחודש</span></div>
+                            <div class="text-[11px] text-indigo-600 mt-0.5 font-semibold">אשראי מקור: ${cardLabel}</div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] text-slate-500 mb-1">
+                                <span>תשלום ${isActive ? paidNum : (paidNum > inst.totalMonths ? inst.totalMonths : 0)} מתוך ${inst.totalMonths}</span>
+                                <span>${Math.round(pct)}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-amber-500 h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderChart(income, expense, net) {
+            const ctx = document.getElementById('gapChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['הכנסות', 'הוצאות', 'פער נטו'],
+                    datasets: [{
+                        data: [income, expense, net],
+                        backgroundColor: ['#10b981', '#f43f5e', net >= 0 ? '#6366f1' : '#ef4444'],
+                        borderRadius: 12,
+                        barThickness: 45
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Heebo', size: 11 } } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Heebo', size: 12, weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
