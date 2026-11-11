@@ -209,11 +209,11 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="text-left md:text-right">
-                        <span class="text-[11px] text-slate-400 block">פער קניות קטנות:</span>
+                        <span class="text-[11px] text-slate-400 block">פער קניות קטנות ("פחיות"):</span>
                         <span id="modelGapAmount" class="text-base font-black text-indigo-700">₪0</span>
                     </div>
                     <button onclick="addSmallExpensesFromGap()" id="addGapBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-all flex items-center gap-1">
-                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> הוסף פער זה כהוצאה תחת "נוסף בעקבות הוצאות קטנות באשראי"
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> הוסף פער זה כהוצאה תחת "שונות"
                     </button>
                 </div>
             </div>
@@ -491,7 +491,7 @@
         let defaultExpenseCategories = [
             'חשמל ומים', 'דיור', 'הלוואות', 'מזון', 'ביגוד',
             'דמי כיס אברימי', 'דמי כיס חוי', 'תחבורה ודלק',
-            'בריאות', 'פנאי ובילויים', 'נוסף בעקבות הוצאות קטנות באשראי', 'שונות'
+            'בריאות', 'פנאי ובילויים', 'שונות'
         ];
 
         const currentYear = new Date().getFullYear();
@@ -554,8 +554,7 @@
             monthsList.forEach((m, idx) => {
                 const btn = document.createElement('button');
                 btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
-                // תוקן: הצגת מספר החודש לצד השם (למשל: 01 - ינואר)
-                btn.textContent = `${m.code} - ${m.name}`;
+                btn.textContent = m.name;
                 btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
                 mContainer.appendChild(btn);
             });
@@ -567,7 +566,7 @@
             if (mSelect && ySelect) {
                 mSelect.innerHTML = '';
                 monthsList.forEach((m, i) => {
-                    mSelect.innerHTML += `<option value="${i}">${m.code} - ${m.name}</option>`;
+                    mSelect.innerHTML += `<option value="${i}">${m.name}</option>`;
                 });
                 ySelect.innerHTML = '';
                 for (let y = currentYear - 1; y <= currentYear + 3; y++) {
@@ -640,10 +639,7 @@
 
             window.transactions.push(newTx);
             await saveAll();
-            
-            // תוקן: סגירה אוטומטית של המודל מיד לאחר השמירה
             closeModal('transactionModal');
-            
             document.getElementById('txTitle').value = '';
             document.getElementById('txAmount').value = '';
             refreshApp();
@@ -674,10 +670,7 @@
 
             window.creditCards.push(newCard);
             await saveAll();
-            
-            // תוקן: סגירה אוטומטית של המודל מיד לאחר השמירה
             closeModal('creditCardModal');
-            
             document.getElementById('ccHolder').value = '';
             document.getElementById('ccDigits').value = '';
             document.getElementById('ccCompany').value = '';
@@ -712,10 +705,7 @@
 
             window.installments.push(newInst);
             await saveAll();
-            
-            // תוקן: סגירה אוטומטית של המודל מיד לאחר השמירה
             closeModal('installmentModal');
-            
             document.getElementById('instTitle').value = '';
             document.getElementById('instAmount').value = '';
             document.getElementById('instMonths').value = '';
@@ -744,6 +734,7 @@
         function toggleCategoryBreakdown() {
             const section = document.getElementById('categoryBreakdownSection');
             const icon = document.getElementById('breakdownIcon');
+            const btnText = document.getElementById('toggleBreakdownBtn');
             if (section.classList.contains('hidden')) {
                 section.classList.remove('hidden');
                 icon.style.transform = 'rotate(180deg)';
@@ -793,10 +784,6 @@
             const val = input.value.trim();
             if (val && !getAllCategories().includes(val)) {
                 window.customCategories.push(val);
-                const key = `${selYear}-${selMonth}`;
-                if (!window.categoryBudgets[key]) window.categoryBudgets[key] = {};
-                window.categoryBudgets[key][val] = 0;
-                
                 input.value = '';
                 await saveAll();
                 renderBreakdownTable();
@@ -839,6 +826,7 @@
 
         async function addSmallExpensesFromGap() {
             if (currentCcGapCalculated <= 0) return;
+            const key = `${selYear}-${selMonth}`;
             const newTx = {
                 id: 'tx_' + Date.now(),
                 year: selYear,
@@ -846,7 +834,7 @@
                 type: 'expense',
                 title: 'השלמת פער קניות קטנות (אשראי מול מפורט)',
                 amount: currentCcGapCalculated,
-                category: 'נוסף בעקבות הוצאות קטנות באשראי'
+                category: 'שונות'
             };
             window.transactions.push(newTx);
             await saveAll();
@@ -867,7 +855,7 @@
             const totalInstallments = getActiveInstallmentsForCurrentMonth();
 
             const netCc = Math.max(0, totalCcBank - totalInstallments);
-            const totalExpense = totalManualExp;
+            const totalExpense = totalManualExp + netCc;
             const netBalance = totalIncome - totalExpense;
 
             document.getElementById('summaryIncome').textContent = '₪' + totalIncome.toLocaleString();
@@ -985,10 +973,6 @@
                 `;
             });
             document.getElementById('expenseTableSum').textContent = '₪' + totalExpense.toLocaleString();
-
-            if (document.getElementById('categoryBreakdownSection') && !document.getElementById('categoryBreakdownSection').classList.contains('hidden')) {
-                renderBreakdownTable();
-            }
 
             renderChart(totalIncome, totalExpense);
             lucide.createIcons();
