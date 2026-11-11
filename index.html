@@ -161,7 +161,7 @@
                     </div>
                 </div>
 
-                <!-- Expandable Category Breakdown Table (תיקון 3) -->
+                <!-- Expandable Category Breakdown Table -->
                 <div id="categoryBreakdownSection" class="hidden pt-4 border-t border-slate-100 space-y-3">
                     <div class="flex items-center justify-between flex-wrap gap-2">
                         <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">פירוט והגדרת סכומי ציפייה לפי קטגוריות</h4>
@@ -228,7 +228,7 @@
             </div>
         </div>
 
-        <!-- Long-term Installments Section (תיקון 2) -->
+        <!-- Long-term Installments Section -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
             <div class="flex items-center justify-between mb-5">
                 <div class="flex items-center gap-2">
@@ -353,7 +353,7 @@
         </div>
     </div>
 
-    <!-- Credit Card Modal (תיקון 1: תמיכה בעריכה) -->
+    <!-- Credit Card Modal (עריכה והוספה) -->
     <div id="creditCardModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
@@ -388,7 +388,7 @@
         </div>
     </div>
 
-    <!-- Installment Modal (תיקון 1 + 2: עריכה והוראות קבע פתוחות) -->
+    <!-- Installment Modal (עריכה והוספה) -->
     <div id="installmentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
@@ -407,7 +407,7 @@
                         <input type="number" id="instAmount" required min="1" step="any" placeholder="200" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                     </div>
                     <div>
-                        <label class="block mb-1 text-slate-600">מספר חודשים (השאר ריק/0 להוראת קבע פתוחה)</label>
+                        <label class="block mb-1 text-slate-600">מספר חודשים (ריק/0 להו"ק פתוחה)</label>
                         <input type="number" id="instMonths" min="0" max="120" placeholder="ללא הגבלה" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                     </div>
                 </div>
@@ -714,7 +714,7 @@
             refreshApp();
         }
 
-        // --- ניהול כרטיסי אשראי (תיקון 1: עריכת אשראי) ---
+        // --- ניהול כרטיסי אשראי (עם עריכה ומחיקה) ---
         function openAddCreditCardModal() {
             document.getElementById('editCcId').value = '';
             document.getElementById('ccModalTitle').textContent = 'הוספת כרטיס אשראי';
@@ -779,7 +779,7 @@
             refreshApp();
         }
 
-        // --- ניהול תשלומים מתמשכים / הוראות קבע (תיקון 1 + 2) ---
+        // --- ניהול תשלומים מתמשכים / הוראות קבע (עם עריכה, מחיקה ומד אחוזים) ---
         function openAddInstallmentModal() {
             document.getElementById('editInstId').value = '';
             document.getElementById('instModalTitle').textContent = 'הוספת תשלום מתמשך';
@@ -811,7 +811,7 @@
             const title = document.getElementById('instTitle').value;
             const amount = parseFloat(document.getElementById('instAmount').value);
             const monthsInput = document.getElementById('instMonths').value;
-            const monthsCount = monthsInput ? parseInt(monthsInput) : 0; // 0 = הוראת קבע ללא הגבלה
+            const monthsCount = monthsInput ? parseInt(monthsInput) : 0; // 0 = הוראת קבע פתוחה
             const cardId = document.getElementById('instCardId').value;
             const startMonth = parseInt(document.getElementById('instStartMonth').value);
             const startYear = parseInt(document.getElementById('instStartYear').value);
@@ -856,7 +856,6 @@
                 let startAbsolute = inst.startYear * 12 + inst.startMonth;
                 let currentAbsolute = selYear * 12 + selMonth;
                 let diff = currentAbsolute - startAbsolute;
-                // פעיל אם זה בתוך טווח החודשים, או שזו הו"ק פתוחה (monthsCount === 0)
                 if (diff >= 0 && (inst.monthsCount === 0 || diff < inst.monthsCount)) {
                     total += inst.amount;
                 }
@@ -936,7 +935,6 @@
             refreshApp();
         }
 
-        // תיקון 3: הוספת קטגוריה חדשה לציפיות עובדת בצורה תקינה
         async function addNewCustomCategory() {
             const input = document.getElementById('newCategoryInput');
             const val = input.value.trim();
@@ -1076,7 +1074,7 @@
             bar.style.width = pct + '%';
             bar.className = `h-full rounded-full transition-all duration-500 ${pct > 100 ? 'bg-rose-500' : 'bg-purple-600'}`;
 
-            // תיקון 1: תצוגת כרטיסי אשראי עם כפתור עיפרון לעריכה
+            // תצוגת כרטיסי אשראי כולל כפתור עריכה (עיפרון)
             const ccGrid = document.getElementById('creditCardsGrid');
             ccGrid.innerHTML = '';
             if (monthCards.length === 0) {
@@ -1102,7 +1100,7 @@
                 });
             }
 
-            // תיקון 1 + 2: תצוגת תשלומים מתמשכים כולל עריכה בעיפרון ומד אחוזים
+            // תצוגת תשלומים מתמשכים כולל עריכה (עיפרון) ומד אחוזים
             const instGrid = document.getElementById('installmentsGrid');
             instGrid.innerHTML = '';
             if (window.installments.length === 0) {
@@ -1115,7 +1113,6 @@
                     let hasLimit = inst.monthsCount && inst.monthsCount > 0;
                     let isActive = diff >= 0 && (!hasLimit || diff < inst.monthsCount);
 
-                    // חישוב מד אחוזים אם יש הגבלת חודשים
                     let progressHtml = '';
                     if (hasLimit) {
                         let currentPaidMonths = Math.max(0, Math.min(diff + 1, inst.monthsCount));
