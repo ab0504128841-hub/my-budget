@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ניהול תקציב חכם - ציפיות מול מציאות (מחובר לענן)</title>
+    <title>ניהול תקציב חכם - ציפיות מול מציאות</title>
     <!-- אייקון שקל בלשונית הדפדפן -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₪</text></svg>">
     <!-- Tailwind CSS -->
@@ -19,9 +19,6 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .card-grad-1 { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
-        .card-grad-2 { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); }
-        .card-grad-3 { background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col pb-16">
@@ -36,9 +33,9 @@
                 <div>
                     <h1 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                         ניהול תקציב, ציפיות ואשראי
-                        <span id="syncStatus" class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">מתחבר לענן...</span>
+                        <span id="syncStatus" class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">שמור מקומית (localStorage)</span>
                     </h1>
-                    <p class="text-xs text-slate-500">שליטה מלאה בהכנסות, הוצאות ויעדים חודשיים (מסונכרן בזמן אמת)</p>
+                    <p class="text-xs text-slate-500">שליטה מלאה בהכנסות, הוצאות ויעדים חודשיים</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -60,16 +57,28 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Summary Cards (4 Cards Grid) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+            <!-- Previous Month Carryover Card (דרישה 4) -->
+            <div id="prevMonthCard" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">יתרה/חובה מחודש קודם</span>
+                    <h2 id="prevMonthAmount" class="text-2xl font-black mt-2 text-slate-900">₪0</h2>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span id="prevMonthLabel">ללא יתרה קודמת</span>
+                    <span id="prevMonthBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">0₪</span>
+                </div>
+            </div>
+
             <!-- Net Balance -->
             <div id="netCard" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all">
                 <div>
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">יתרה נטו לחודש</span>
-                    <h2 id="netAmount" class="text-3xl font-black mt-2 text-slate-900">₪0</h2>
+                    <h2 id="netAmount" class="text-2xl font-black mt-2 text-slate-900">₪0</h2>
                 </div>
                 <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>הכנסות פחות הוצאות</span>
+                    <span>כולל העברות מחודש קודם</span>
                     <span id="netBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">מאוזן</span>
                 </div>
             </div>
@@ -81,11 +90,11 @@
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">סך הכנסות</span>
                         <h3 id="summaryIncome" class="text-2xl font-black mt-1 text-emerald-600">₪0</h3>
                     </div>
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
                     </div>
                 </div>
-                <div class="text-xs text-slate-400 mt-4">כולל כל מקורות ההכנסה לחודש זה</div>
+                <div class="text-xs text-slate-400 mt-4">כולל הכנסות והעברה חיובית</div>
             </div>
 
             <!-- Expenses -->
@@ -95,15 +104,15 @@
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">סך הוצאות כולל</span>
                         <h3 id="summaryExpense" class="text-2xl font-black mt-1 text-rose-600">₪0</h3>
                     </div>
-                    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                        <i data-lucide="trending-down" class="w-6 h-6"></i>
+                    <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                        <i data-lucide="trending-down" class="w-5 h-5"></i>
                     </div>
                 </div>
-                <div class="text-xs text-slate-400 mt-4">הוצאות מפורטות ותשלומים מתמשכים</div>
+                <div class="text-xs text-slate-400 mt-4">הוצאות מפורטות ומינוס קודם</div>
             </div>
         </div>
 
-        <!-- Budget vs Actual Card with Detailed Breakdown Tab -->
+        <!-- Budget vs Actual Card -->
         <div id="targetBudgetCard" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 transition-all">
             <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div class="flex items-center gap-2">
@@ -177,7 +186,7 @@
             </div>
         </div>
 
-        <!-- Credit Cards & Gap Calculation Section -->
+        <!-- Credit Cards & Gap Calculation Section (דרישה 2) -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-6">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -185,8 +194,8 @@
                         <i data-lucide="credit-card" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">ניהול כרטיסי אשראי וחיוב חודשי כולל</h3>
-                        <p class="text-xs text-slate-500">מעקב אחר חיובי האשראי הגולמיים שירדו בבנק בחודש זה</p>
+                        <h3 class="text-base font-bold text-slate-900">ניהול כרטיסי אשראי ותצוגת חיוב</h3>
+                        <p class="text-xs text-slate-500">נתוני האשראי נשמרים למעקב בלבד ולא נכנסים אוטומטית להוצאות</p>
                     </div>
                 </div>
                 <button onclick="openModal('creditCardModal')" class="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-colors">
@@ -200,20 +209,20 @@
             <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
                 <div class="space-y-1 text-center md:text-right">
                     <span class="font-bold text-slate-800 flex items-center gap-1.5 justify-center md:justify-start">
-                        <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i> מודל חישוב פער אשראי מול הוצאות מפורטות (הוצאות קטנות)
+                        <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i> מודל חישוב פער אשראי מול הוצאות מדווחות
                     </span>
                     <p class="text-slate-500 max-w-xl">
-                        חיובי אשראי נטו (בניכוי תשלומים מתמשכים): <strong id="modelCcSum" class="text-slate-700">₪0</strong> | 
-                        הוצאות שוטפות מפורטות: <strong id="modelManualExpSum" class="text-slate-700">₪0</strong>
+                        סך חיוב אשראי בבנק: <strong id="modelCcSum" class="text-slate-700">₪0</strong> | 
+                        סך הוצאות מדווחות בפועל: <strong id="modelManualExpSum" class="text-slate-700">₪0</strong>
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="text-left md:text-right">
-                        <span class="text-[11px] text-slate-400 block">פער קניות קטנות ("פחיות"):</span>
+                        <span class="text-[11px] text-slate-400 block">הפער שטרם דווח:</span>
                         <span id="modelGapAmount" class="text-base font-black text-indigo-700">₪0</span>
                     </div>
                     <button onclick="addSmallExpensesFromGap()" id="addGapBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-all flex items-center gap-1">
-                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> הוסף פער זה כהוצאה תחת "שונות"
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> אישור הכנסת הפער להוצאות
                     </button>
                 </div>
             </div>
@@ -226,7 +235,7 @@
                     <div class="bg-amber-50 text-amber-600 p-2 rounded-xl">
                         <i data-lucide="repeat" class="w-5 h-5"></i>
                     </div>
-                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, הלוואות) עם שיוך לאשראי</h3>
+                    <h3 class="text-base font-bold text-slate-900">תשלומים ארוכי טווח (כגון רב-קו, הלוואות)</h3>
                 </div>
                 <button onclick="openModal('installmentModal')" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl transition-colors">
                     + הוסף תשלום מתמשך
@@ -235,7 +244,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="installmentsGrid"></div>
         </div>
 
-        <!-- Separate Tables: Incomes & Expenses -->
+        <!-- Separate Tables: Incomes & Expenses (דרישה 5: עריכה דינמית) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Incomes Table -->
             <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between">
@@ -261,7 +270,7 @@
                     </div>
                 </div>
                 <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between font-bold text-xs">
-                    <span>סה"כ הכנסות:</span>
+                    <span>סה"כ הכנסות (כולל עודף קודם):</span>
                     <span id="incomeTableSum" class="text-emerald-600 text-sm">₪0</span>
                 </div>
             </div>
@@ -271,7 +280,7 @@
                 <div>
                     <div class="p-5 border-b border-slate-100 bg-rose-50/40 flex items-center justify-between">
                         <span class="font-bold text-rose-800 text-sm flex items-center gap-2">
-                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i> טבלת הוצאות בפועל (מפורטות ותשלומים)
+                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i> טבלת הוצאות מדווחות בפועל
                         </span>
                         <span id="expenseCount" class="text-xs bg-rose-100 text-rose-800 font-bold px-2.5 py-0.5 rounded-full">0 פריטים</span>
                     </div>
@@ -279,7 +288,7 @@
                         <table class="w-full text-right text-xs">
                             <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
                                 <tr>
-                                    <th class="p-3">תיאור ואשראי</th>
+                                    <th class="p-3">תיאור</th>
                                     <th class="p-3">קטגוריה</th>
                                     <th class="p-3">סכום</th>
                                     <th class="p-3 text-center">פעולה</th>
@@ -290,7 +299,7 @@
                     </div>
                 </div>
                 <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between font-bold text-xs">
-                    <span>סה"כ הוצאות כולל:</span>
+                    <span>סה"כ הוצאות (כולל חוב קודם):</span>
                     <span id="expenseTableSum" class="text-rose-600 text-sm">₪0</span>
                 </div>
             </div>
@@ -298,7 +307,7 @@
 
         <!-- Chart Section -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-            <h3 class="text-base font-bold text-slate-900 mb-4">גרף השוואת פערים (הכנסות מול הוצאות כוללות)</h3>
+            <h3 class="text-base font-bold text-slate-900 mb-4">גרף השוואת פערים (הכנסות מול הוצאות)</h3>
             <div class="w-full h-72 relative">
                 <canvas id="gapChart"></canvas>
             </div>
@@ -308,14 +317,15 @@
 
     <!-- MODALS -->
 
-    <!-- Add Transaction Modal -->
+    <!-- Add/Edit Transaction Modal (דרישה 5) -->
     <div id="transactionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
+                <h3 id="txModalTitle" class="text-base font-bold text-slate-900">הוספת תנועה חדשה</h3>
                 <button onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="addTransaction(event)" class="space-y-4 text-xs font-medium">
+            <form onsubmit="saveTransaction(event)" class="space-y-4 text-xs font-medium">
+                <input type="hidden" id="editTxId" value="">
                 <div>
                     <label class="block mb-1 text-slate-600">סוג תנועה</label>
                     <select id="txType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
@@ -333,9 +343,7 @@
                 </div>
                 <div>
                     <label class="block mb-1 text-slate-600">קטגוריה</label>
-                    <select id="txCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                        <!-- Populated dynamically -->
-                    </select>
+                    <select id="txCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></select>
                 </div>
                 <div class="pt-2 flex justify-end gap-2">
                     <button type="button" onclick="closeModal('transactionModal')" class="px-4 py-2 rounded-xl border border-slate-200">ביטול</button>
@@ -383,7 +391,7 @@
     <div id="installmentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך (כגון רב-קו)</h3>
+                <h3 class="text-base font-bold text-slate-900">הוספת תשלום מתמשך</h3>
                 <button onclick="closeModal('installmentModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form onsubmit="addInstallment(event)" class="space-y-4 text-xs font-medium">
@@ -402,10 +410,8 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block mb-1 text-slate-600">שייך לכרטיס אשראי (ממנו יורד)</label>
-                    <select id="instCardId" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                        <!-- Populated dynamically -->
-                    </select>
+                    <label class="block mb-1 text-slate-600">שייך לכרטיס אשראי (אופציונלי)</label>
+                    <select id="instCardId" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></select>
                 </div>
                 <div>
                     <label class="block mb-1 text-slate-600">חודש ושנת התחלה</label>
@@ -454,10 +460,12 @@
                 window.categoryBudgets = data.categoryBudgets || {};
                 window.hiddenCategories = data.hiddenCategories || [];
                 window.customCategories = data.customCategories || [];
+                // Save locally too
+                window.saveToLocalStorage();
             }
             const statusEl = document.getElementById('syncStatus');
             if (statusEl) {
-                statusEl.textContent = 'מחובר בזמן אמת לענן';
+                statusEl.textContent = 'מסונכרן בזמן אמת (ענן + מקומי)';
                 statusEl.className = 'text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold';
             }
             window.refreshApp();
@@ -465,14 +473,15 @@
             console.error("Cloud connection error:", error);
             const statusEl = document.getElementById('syncStatus');
             if (statusEl) {
-                statusEl.textContent = 'שגיאת חיבור ענן';
-                statusEl.className = 'text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-semibold';
+                statusEl.textContent = 'שמור מקומית (אופליין)';
+                statusEl.className = 'text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold';
             }
         });
     </script>
 
     <!-- Application Main Script Logic -->
     <script>
+        // דרישה 1: הוספת מספר החודש
         const monthsList = [
             { name: 'ינואר', code: '01' },
             { name: 'פברואר', code: '02' },
@@ -500,12 +509,36 @@
         let selYear = currentYear;
         let selMonth = currentMonth;
 
-        window.transactions = [];
-        window.creditCards = [];
-        window.installments = [];
-        window.categoryBudgets = {};
-        window.hiddenCategories = [];
-        window.customCategories = [];
+        // דרישה 3: טעינה מ-localStorage למניעת מחיקת נתונים
+        function loadFromLocalStorage() {
+            try {
+                window.transactions = JSON.parse(localStorage.getItem('app_transactions')) || [];
+                window.creditCards = JSON.parse(localStorage.getItem('app_creditCards')) || [];
+                window.installments = JSON.parse(localStorage.getItem('app_installments')) || [];
+                window.categoryBudgets = JSON.parse(localStorage.getItem('app_categoryBudgets')) || {};
+                window.hiddenCategories = JSON.parse(localStorage.getItem('app_hiddenCategories')) || [];
+                window.customCategories = JSON.parse(localStorage.getItem('app_customCategories')) || [];
+            } catch(e) {
+                console.error("Error reading localStorage", e);
+                window.transactions = [];
+                window.creditCards = [];
+                window.installments = [];
+                window.categoryBudgets = {};
+                window.hiddenCategories = [];
+                window.customCategories = [];
+            }
+        }
+
+        window.saveToLocalStorage = function() {
+            localStorage.setItem('app_transactions', JSON.stringify(window.transactions));
+            localStorage.setItem('app_creditCards', JSON.stringify(window.creditCards));
+            localStorage.setItem('app_installments', JSON.stringify(window.installments));
+            localStorage.setItem('app_categoryBudgets', JSON.stringify(window.categoryBudgets));
+            localStorage.setItem('app_hiddenCategories', JSON.stringify(window.hiddenCategories));
+            localStorage.setItem('app_customCategories', JSON.stringify(window.customCategories));
+        }
+
+        loadFromLocalStorage();
 
         let currentCcGapCalculated = 0;
         let chartInstance = null;
@@ -513,9 +546,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTabs();
             populateInstallmentSelects();
+            refreshApp();
         });
 
         async function saveAll() {
+            window.saveToLocalStorage();
             if (window.docRef && window.setDoc) {
                 try {
                     await window.setDoc(window.docRef, {
@@ -537,6 +572,7 @@
             return [...activeDefaults, ...window.customCategories];
         }
 
+        // דרישה 1: הצגת מספר החודש בטאבים
         function initTabs() {
             const yContainer = document.getElementById('yearsTabContainer');
             yContainer.innerHTML = '';
@@ -554,7 +590,8 @@
             monthsList.forEach((m, idx) => {
                 const btn = document.createElement('button');
                 btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${idx === selMonth ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
-                btn.textContent = m.name;
+                // מציג את שם החודש + מספר החודש בסוגריים
+                btn.textContent = `${m.name} (${m.code})`;
                 btn.onclick = () => { selMonth = idx; initTabs(); refreshApp(); };
                 mContainer.appendChild(btn);
             });
@@ -566,7 +603,7 @@
             if (mSelect && ySelect) {
                 mSelect.innerHTML = '';
                 monthsList.forEach((m, i) => {
-                    mSelect.innerHTML += `<option value="${i}">${m.name}</option>`;
+                    mSelect.innerHTML += `<option value="${i}">${m.name} (${m.code})</option>`;
                 });
                 ySelect.innerHTML = '';
                 for (let y = currentYear - 1; y <= currentYear + 3; y++) {
@@ -578,6 +615,11 @@
         function openModal(modalId) {
             document.getElementById(modalId).classList.remove('hidden');
             if (modalId === 'transactionModal') {
+                if (!document.getElementById('editTxId').value) {
+                    document.getElementById('txModalTitle').textContent = 'הוספת תנועה חדשה';
+                    document.getElementById('txTitle').value = '';
+                    document.getElementById('txAmount').value = '';
+                }
                 populateCategoryDropdown();
             } else if (modalId === 'installmentModal') {
                 populateInstallmentCardSelect();
@@ -586,6 +628,9 @@
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
+            if (modalId === 'transactionModal') {
+                document.getElementById('editTxId').value = '';
+            }
         }
 
         function populateCategoryDropdown() {
@@ -608,41 +653,65 @@
 
         function populateInstallmentCardSelect() {
             const select = document.getElementById('instCardId');
-            select.innerHTML = '';
+            select.innerHTML = '<option value="">ללא שיוך לכרטיס מסוים</option>';
             const key = `${selYear}-${selMonth}`;
             const cards = window.creditCards.filter(c => c.monthKey === key);
-            if (cards.length === 0) {
-                select.innerHTML = `<option value="">אין כרטיסים בחודש זה (הוסף קודם)</option>`;
-            } else {
-                cards.forEach(c => {
-                    select.innerHTML += `<option value="${c.id}">${c.company} (...${c.digits}) - ${c.holder}</option>`;
-                });
-            }
+            cards.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.company} (...${c.digits}) - ${c.holder}</option>`;
+            });
         }
 
-        async function addTransaction(e) {
+        // דרישה 5: עריכה או שמירה של תנועה
+        async function saveTransaction(e) {
             e.preventDefault();
+            const editId = document.getElementById('editTxId').value;
             const type = document.getElementById('txType').value;
             const title = document.getElementById('txTitle').value;
             const amount = parseFloat(document.getElementById('txAmount').value);
             const category = document.getElementById('txCategory').value;
 
-            const newTx = {
-                id: 'tx_' + Date.now(),
-                year: selYear,
-                month: selMonth,
-                type,
-                title,
-                amount,
-                category
-            };
+            if (editId) {
+                // עריכה
+                const idx = window.transactions.findIndex(t => t.id === editId);
+                if (idx !== -1) {
+                    window.transactions[idx].type = type;
+                    window.transactions[idx].title = title;
+                    window.transactions[idx].amount = amount;
+                    window.transactions[idx].category = category;
+                }
+            } else {
+                // הוספה חדשה
+                const newTx = {
+                    id: 'tx_' + Date.now(),
+                    year: selYear,
+                    month: selMonth,
+                    type,
+                    title,
+                    amount,
+                    category
+                };
+                window.transactions.push(newTx);
+            }
 
-            window.transactions.push(newTx);
             closeModal('transactionModal');
             await saveAll();
-            document.getElementById('txTitle').value = '';
-            document.getElementById('txAmount').value = '';
             refreshApp();
+        }
+
+        // דרישה 5: פתיחת מודל עריכה דינמי עבור תנועה
+        function editTransaction(id) {
+            const tx = window.transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            document.getElementById('editTxId').value = tx.id;
+            document.getElementById('txModalTitle').textContent = 'עריכת תנועה';
+            document.getElementById('txType').value = tx.type;
+            populateCategoryDropdown();
+            document.getElementById('txTitle').value = tx.title;
+            document.getElementById('txAmount').value = tx.amount;
+            document.getElementById('txCategory').value = tx.category;
+
+            openModal('transactionModal');
         }
 
         async function deleteTransaction(id) {
@@ -731,10 +800,37 @@
             return total;
         }
 
+        // דרישה 4: חישוב יתרת חודש קודם באופן רקורסיבי/מצטבר
+        function getPreviousMonthBalance(year, month) {
+            let prevMonth = month - 1;
+            let prevYear = year;
+            if (prevMonth < 0) {
+                prevMonth = 11;
+                prevYear -= 1;
+            }
+
+            // במידה וזה חודש קודם בלתי קיים, מחזיר 0
+            const prevTxs = window.transactions.filter(t => t.year === prevYear && t.month === prevMonth);
+            if (prevTxs.length === 0) return 0;
+
+            const prevIncomes = prevTxs.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+            const prevExpenses = prevTxs.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+
+            // חישוב רקורסיבי של החודש שלפניו
+            const prevCarryover = getPreviousMonthBalance(prevYear, prevMonth);
+
+            let totalInc = prevIncomes;
+            let totalExp = prevExpenses;
+
+            if (prevCarryover > 0) totalInc += prevCarryover;
+            else if (prevCarryover < 0) totalExp += Math.abs(prevCarryover);
+
+            return totalInc - totalExp;
+        }
+
         function toggleCategoryBreakdown() {
             const section = document.getElementById('categoryBreakdownSection');
             const icon = document.getElementById('breakdownIcon');
-            const btnText = document.getElementById('toggleBreakdownBtn');
             if (section.classList.contains('hidden')) {
                 section.classList.remove('hidden');
                 icon.style.transform = 'rotate(180deg)';
@@ -824,15 +920,18 @@
             }
         }
 
+        // דרישה 2: הכנסת הפער משימוש באשראי להוצאות מדווחות רק באישור מפורש
         async function addSmallExpensesFromGap() {
-            if (currentCcGapCalculated <= 0) return;
-            const key = `${selYear}-${selMonth}`;
+            if (currentCcGapCalculated <= 0) {
+                alert("אין פער חיובי להכנסה.");
+                return;
+            }
             const newTx = {
                 id: 'tx_' + Date.now(),
                 year: selYear,
                 month: selMonth,
                 type: 'expense',
-                title: 'השלמת פער קניות קטנות (אשראי מול מפורט)',
+                title: 'אישור פער חיוב אשראי מול הוצאות',
                 amount: currentCcGapCalculated,
                 category: 'שונות'
             };
@@ -843,32 +942,66 @@
 
         function refreshApp() {
             const monthTxs = window.transactions.filter(t => t.year === selYear && t.month === selMonth);
-            const incomes = monthTxs.filter(t => t.type === 'income');
-            const manualExpenses = monthTxs.filter(t => t.type === 'expense');
+            const rawIncomes = monthTxs.filter(t => t.type === 'income');
+            const rawExpenses = monthTxs.filter(t => t.type === 'expense');
 
-            const totalIncome = incomes.reduce((acc, t) => acc + t.amount, 0);
-            const totalManualExp = manualExpenses.reduce((acc, t) => acc + t.amount, 0);
+            const userIncomesSum = rawIncomes.reduce((acc, t) => acc + t.amount, 0);
+            const userExpensesSum = rawExpenses.reduce((acc, t) => acc + t.amount, 0);
 
+            // דרישה 4: חישוב יתרת חודש קודם
+            const prevBalance = getPreviousMonthBalance(selYear, selMonth);
+            const prevMonthCardEl = document.getElementById('prevMonthCard');
+            const prevMonthAmountEl = document.getElementById('prevMonthAmount');
+            const prevMonthLabelEl = document.getElementById('prevMonthLabel');
+            const prevMonthBadgeEl = document.getElementById('prevMonthBadge');
+
+            let prevIncomeAdd = 0;
+            let prevExpenseAdd = 0;
+
+            if (prevBalance > 0) {
+                prevIncomeAdd = prevBalance;
+                prevMonthAmountEl.textContent = '₪' + prevBalance.toLocaleString();
+                prevMonthAmountEl.className = 'text-2xl font-black mt-2 text-emerald-600';
+                prevMonthLabelEl.textContent = 'יתרה חיובית שהועברה';
+                prevMonthBadgeEl.textContent = 'יתרה +';
+                prevMonthBadgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700';
+            } else if (prevBalance < 0) {
+                prevExpenseAdd = Math.abs(prevBalance);
+                prevMonthAmountEl.textContent = '₪' + Math.abs(prevBalance).toLocaleString();
+                prevMonthAmountEl.className = 'text-2xl font-black mt-2 text-rose-600';
+                prevMonthLabelEl.textContent = 'חובה/מינוס שהועבר';
+                prevMonthBadgeEl.textContent = 'מינוס -';
+                prevMonthBadgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700';
+            } else {
+                prevMonthAmountEl.textContent = '₪0';
+                prevMonthAmountEl.className = 'text-2xl font-black mt-2 text-slate-800';
+                prevMonthLabelEl.textContent = 'מאוזן מחודש קודם';
+                prevMonthBadgeEl.textContent = '₪0';
+                prevMonthBadgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700';
+            }
+
+            // חישוב סך הכל כולל יתרות קודמות
+            const totalIncome = userIncomesSum + prevIncomeAdd;
+            const totalExpense = userExpensesSum + prevExpenseAdd;
+            const netBalance = totalIncome - totalExpense;
+
+            // דרישה 2: נתוני אשראי מוצגים בלבד ואינם נכנסים אוטומטית להוצאות
             const key = `${selYear}-${selMonth}`;
             const monthCards = window.creditCards.filter(c => c.monthKey === key);
             const totalCcBank = monthCards.reduce((acc, c) => acc + c.amount, 0);
-            const totalInstallments = getActiveInstallmentsForCurrentMonth();
-
-            const netCc = Math.max(0, totalCcBank - totalInstallments);
-            const totalExpense = totalManualExp + netCc;
-            const netBalance = totalIncome - totalExpense;
 
             document.getElementById('summaryIncome').textContent = '₪' + totalIncome.toLocaleString();
             document.getElementById('summaryExpense').textContent = '₪' + totalExpense.toLocaleString();
             
             const netAmountEl = document.getElementById('netAmount');
             netAmountEl.textContent = '₪' + netBalance.toLocaleString();
-            netAmountEl.className = `text-3xl font-black mt-2 ${netBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+            netAmountEl.className = `text-2xl font-black mt-2 ${netBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
 
             const netBadge = document.getElementById('netBadge');
             netBadge.textContent = netBalance >= 0 ? 'יתרה חיובית' : 'גירעון';
             netBadge.className = `px-2.5 py-1 rounded-full text-xs font-bold ${netBalance >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`;
 
+            // ציפיות ויעדים
             const catBudgetsObj = window.categoryBudgets[key] || {};
             const totalTarget = Object.values(catBudgetsObj).reduce((acc, v) => acc + v, 0);
 
@@ -886,6 +1019,7 @@
             bar.style.width = pct + '%';
             bar.className = `h-full rounded-full transition-all duration-500 ${pct > 100 ? 'bg-rose-500' : 'bg-purple-600'}`;
 
+            // תצוגת כרטיסי אשראי (דרישה 2)
             const ccGrid = document.getElementById('creditCardsGrid');
             ccGrid.innerHTML = '';
             if (monthCards.length === 0) {
@@ -908,6 +1042,7 @@
                 });
             }
 
+            // תצוגת תשלומים מתמשכים
             const instGrid = document.getElementById('installmentsGrid');
             instGrid.innerHTML = '';
             if (window.installments.length === 0) {
@@ -935,43 +1070,76 @@
                 });
             }
 
-            currentCcGapCalculated = Math.max(0, netCc - totalManualExp);
-            document.getElementById('modelCcSum').textContent = '₪' + netCc.toLocaleString();
-            document.getElementById('modelManualExpSum').textContent = '₪' + totalManualExp.toLocaleString();
+            // חישוב פער אשראי מול הוצאות מדווחות
+            currentCcGapCalculated = Math.max(0, totalCcBank - userExpensesSum);
+            document.getElementById('modelCcSum').textContent = '₪' + totalCcBank.toLocaleString();
+            document.getElementById('modelManualExpSum').textContent = '₪' + userExpensesSum.toLocaleString();
             document.getElementById('modelGapAmount').textContent = '₪' + currentCcGapCalculated.toLocaleString();
 
+            // דרישה 4 + 5: טבלת הכנסות כולל יתרה מחודש קודם וכפתורי עריכה (עיפרון)
             const incBody = document.getElementById('incomeTableBody');
             incBody.innerHTML = '';
-            document.getElementById('incomeCount').textContent = incomes.length + ' פריטים';
-            incomes.forEach(t => {
+            
+            let totalIncomeItemCount = rawIncomes.length;
+            if (prevIncomeAdd > 0) {
+                totalIncomeItemCount += 1;
+                incBody.innerHTML += `
+                    <tr class="bg-emerald-50/50">
+                        <td class="p-3 font-bold text-emerald-900">יתרה מחודש קודם</td>
+                        <td class="p-3 text-emerald-700 font-semibold">העברת עודפים</td>
+                        <td class="p-3 font-black text-emerald-600">₪${prevIncomeAdd.toLocaleString()}</td>
+                        <td class="p-3 text-center text-slate-400 text-[10px]">אוטומטי</td>
+                    </tr>
+                `;
+            }
+
+            rawIncomes.forEach(t => {
                 incBody.innerHTML += `
                     <tr>
                         <td class="p-3 font-bold text-slate-800">${t.title}</td>
                         <td class="p-3 text-slate-500">${t.category}</td>
                         <td class="p-3 font-black text-emerald-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 text-center flex items-center justify-center gap-2">
+                            <button onclick="editTransaction('${t.id}')" title="ערוך תנועה" class="text-indigo-600 hover:text-indigo-800"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteTransaction('${t.id}')" title="מחק תנועה" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
             });
+            document.getElementById('incomeCount').textContent = totalIncomeItemCount + ' פריטים';
             document.getElementById('incomeTableSum').textContent = '₪' + totalIncome.toLocaleString();
 
+            // דרישה 4 + 5: טבלת הוצאות כולל מינוס מחודש קודם וכפתורי עריכה (עיפרון)
             const expBody = document.getElementById('expenseTableBody');
             expBody.innerHTML = '';
-            document.getElementById('expenseCount').textContent = manualExpenses.length + ' פריטים';
-            manualExpenses.forEach(t => {
+            
+            let totalExpenseItemCount = rawExpenses.length;
+            if (prevExpenseAdd > 0) {
+                totalExpenseItemCount += 1;
+                expBody.innerHTML += `
+                    <tr class="bg-rose-50/50">
+                        <td class="p-3 font-bold text-rose-900">חובה מחודש קודם</td>
+                        <td class="p-3 text-rose-700 font-semibold">העברת גירעון</td>
+                        <td class="p-3 font-black text-rose-600">₪${prevExpenseAdd.toLocaleString()}</td>
+                        <td class="p-3 text-center text-slate-400 text-[10px]">אוטומטי</td>
+                    </tr>
+                `;
+            }
+
+            rawExpenses.forEach(t => {
                 expBody.innerHTML += `
                     <tr>
                         <td class="p-3 font-bold text-slate-800">${t.title}</td>
                         <td class="p-3 text-slate-500">${t.category}</td>
                         <td class="p-3 font-black text-rose-600">₪${t.amount.toLocaleString()}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3 text-center flex items-center justify-center gap-2">
+                            <button onclick="editTransaction('${t.id}')" title="ערוך תנועה" class="text-indigo-600 hover:text-indigo-800"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteTransaction('${t.id}')" title="מחק תנועה" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
                 `;
             });
+            document.getElementById('expenseCount').textContent = totalExpenseItemCount + ' פריטים';
             document.getElementById('expenseTableSum').textContent = '₪' + totalExpense.toLocaleString();
 
             renderChart(totalIncome, totalExpense);
@@ -986,7 +1154,7 @@
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['הכנסות מול הוצאות'],
+                    labels: ['הכנסות מול הוצאות כולל העברות'],
                     datasets: [
                         {
                             label: 'הכנסות',
@@ -1016,5 +1184,5 @@
             });
         }
     </script>
-<input type='hidden' name='ntsp_block_page' value='https://m.safepage.neto.net.il/?a=block/block1&level=-30&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e05c8246bb536d71c7939a9d%26fn%3Dindex.html%26cd%3Dattachment%26ts%3D498427%26p%3Dfs%26cid%3D1%26sig%3Df2b4dfcfb08467efc05000fbe3dc7c00a643f0526317ddf316a7fe943ed73fab%26v%3D0&user_id=1287613&sigid=2e9703c11fc99878f908afe2033b14c57696eecef47aec6a15d48d8ba4c3240b&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2F&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-30'/><input type='hidden' name='ntsp_user_level' value='-30'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+</body>
 </html>
